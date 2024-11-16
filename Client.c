@@ -1,5 +1,17 @@
 #include "Client.h"
 #include "Server.h"
+#include "extra.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <netdb.h>
+#include <string.h>
+#include <signal.h>
+
+
 
 void start(char* PLID, int max_playtime){ //UDP protocol
     /* following this command the Player application sends a 
@@ -63,7 +75,7 @@ void quit(){ //UDP protocol
 
 
 
-void exit(){ //UDP protocol
+void EXIT(){ //UDP protocol
     /*the player asks to exit the Player application. If a game was under way,
     the GS server should be informed, by sending a message using the UDP protocol.
     */
@@ -85,4 +97,49 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
 
 
 
-int main(void){}
+int main(int argc, char *argv[]){
+    char *port, *ip_address;
+
+    if (argc != 1 && argc != 3 && argc != 5){
+        fprintf(stderr, "Incorrect Arguments\n");
+        exit(EXIT_FAILURE);
+    }
+    if (argc == 1){
+        // IP DO NOSSO PC
+        ip_address = getIPadress();
+
+        // Port 58000 + nº Grupo(14)
+        port = "58014";
+
+        //printf("%s\n%s\n",ip_address, port);
+    }
+    if (argc == 3){
+        if (strcmp(argv[1],"-n") == 0){
+            ip_address = argv[2];
+            // Port 58000 + nº Grupo(14)
+            port = "58014";
+        }       
+        else{
+            // IP DO NOSSO PC
+            ip_address = getIPadress();
+            port = argv[2];
+        }
+        //printf("%s\n%s\n",ip_address, port);
+    }
+    else{
+        ip_address = argv[2];
+        port = argv[4];
+        //printf("%s\n%s\n",ip_address, port);
+    }
+
+    /*
+    Agora ele pode COMEÇAR(START) 
+    ou
+    TERMINAR(QUIT) um jogo que tenha sido gravado
+    ou
+    EXIT da aplicação
+    e muitas outras....
+    */
+
+    exit(EXIT_SUCCESS);
+}
