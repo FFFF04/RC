@@ -67,16 +67,13 @@ void read_msg(char *prod_consumidor, int file, size_t size) {
 }
 
 
-char* UDP(char* line, char* ip_address, char* port){
+void UDP(char* line, char* ip_address, char* port,char* msg){
     struct addrinfo hints,*res;
     int fd,n;
     ssize_t nbytes,nleft,nwritten,nread;
     struct sigaction act;
     struct sockaddr_in addr;
     socklen_t addrlen;
-
-    char buffer[128] = {};
-    char* res_msg;
     
     memset(&act,0,sizeof act);
     act.sa_handler=SIG_IGN;
@@ -101,11 +98,10 @@ char* UDP(char* line, char* ip_address, char* port){
     
     freeaddrinfo(res);
     addrlen=sizeof(addr);
-    n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
-    printf("aqui %ld\n",strlen(buffer));
-    res_msg = buffer;
+    n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
+
     if(n == -1)/*error*/
         exit(EXIT_FAILURE);
     close(fd);
-    return res_msg;
+    return ;
 }

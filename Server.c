@@ -10,15 +10,28 @@
 #include <string.h>
 #include <signal.h>
 #include <stddef.h>
+#include <ctype.h>
+#include <time.h>
 
 int verbose_mode = 0; // 0 desativado; 1 ativado
-int game_started = 0; // 0 nao ha nenhum; fd há jogo e é esse o file 
+int game_started = 0; // 0 nao ha nenhum; fd há jogo e é esse o file
+FILE *fptr;
+char colors[6] = {'R', 'G', 'B', 'Y', 'O', 'P'};
+int clock_my = 0; 
 
+/*
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!! TEMOS DE FAZER UM RELOGIO !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+*/
 
 char* start(char* line){
 
+    srand((unsigned int) time(NULL));
+
     char* PLID, *time, *endptr;
     long int num_PLID, num_time;
+    char solution[4];
     
     if(game_started == 1)
         return "NOK";
@@ -26,9 +39,17 @@ char* start(char* line){
     line = strtok(line, " ");
     PLID = strtok(NULL, " ");
     time = strtok(NULL, " ");
-    printf("time%s",time);
-    if (strlen(PLID) != 6){
+
+    if (strlen(PLID) != 6)
         return "ERR";
+    
+    for (size_t i = 0; i < strlen(PLID); i++){
+        if (isdigit(PLID[i]) == 0)
+            return "ERR";
+    }
+    for (size_t i = 0; i < strlen(time); i++){
+        if (isdigit(time[i]) == 0)
+            return "ERR";
     }
     
     num_PLID = strtol(PLID, &endptr, 10);
@@ -36,10 +57,22 @@ char* start(char* line){
     if (num_PLID == 0 || num_time == 0 || num_time > 600)
         return "ERR";
     
-    
-    
-    //CRIAR FILE E FAZER O RANDOM!!!
+    //CRIAR FILE com PLID que vai ser o nome mas com o que a frente?
+    fptr = fopen(strcat(PLID,".txt"), "w"); // QUAL É O NOME QUE É SUPOSTO DARMOS A ESTA PORRA???? 
+    if (fptr == NULL) { 
+        fprintf(stderr, "Could not open file\n");
+        exit(EXIT_FAILURE);
+    } 
+    for (size_t i = 0; i < 4; i++)
+        solution[i] = colors[rand() % 6];
+    solution[4] = '\0';
+    fputs(solution,fptr);
+    fputs("\n",fptr);
+    fflush(fptr);
     game_started = 1;
+    //inicar o relogio aqui com o num_time
+    // POR AGORA:
+    clock_my = num_time;
 
     return "OK";
 }
@@ -48,13 +81,16 @@ char* start(char* line){
 
 
 int main(int argc, char *argv[]){
-    char *port, *command;
+    char *port;
     struct addrinfo hints,*res;
     struct sockaddr_in addr;
     socklen_t addrlen;
+    struct sigaction act;
     int fd, errcode;
+    int i = 0;
     ssize_t n;
-    char buffer[128] = {};
+    char buffer[128];
+    char command[50];
 
     if (argc <= 0 || argc > 4){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -82,6 +118,12 @@ int main(int argc, char *argv[]){
     //Ter variavel para ser mais facil verificar depois
     // se esta a 1 entao encontrou se nao esta a 0
 
+    memset(&act,0,sizeof act);
+    act.sa_handler=SIG_IGN;
+    if(sigaction(SIGPIPE,&act,NULL) == -1)/*error*/
+        exit(EXIT_FAILURE);
+
+
     //PARA UDP
     fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
     if(fd == -1)/*error*/
@@ -105,11 +147,16 @@ int main(int argc, char *argv[]){
         if(recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
             exit(EXIT_FAILURE);
         
-        command="start";
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len - 1] == '\n')
+            buffer[len - 1] = '\0';
 
-        // strcpy(command,buffer);    
-        // strtok(command, " ");
-
+        while (buffer[i] != ' ' && buffer[i] != '\0') {
+            command[i] = buffer[i];
+            i++;
+        }
+        command[i] = '\0';
+        i = 0;
         if (strcmp(command,"start") == 0){
             char* res_msg = start(buffer);
             if(sendto(fd, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/

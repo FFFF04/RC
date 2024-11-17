@@ -21,9 +21,11 @@ void start(char* line, char* p_address, char* port){ //UDP protocol
     The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
     that it can start playing. The Player application displays this information. */
 
-    char* msg = UDP(line,p_address,port);
+    char* msg = (char*) calloc(128,1);
+    UDP(line,p_address,port,msg);
     //Analise do erro/ começo
     printf("%s\n",msg);
+    free(msg);
     //temos de criar file e dar erro se ja existir jogo nao acabado
 }
 
@@ -107,8 +109,9 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
 
 int main(int argc, char *argv[]){
     char *port, *ip_address;
-    char input[50] = {};
-    char *command;
+    char input[128];
+    char command[50];
+    int i = 0;
 
     if (argc != 1 && argc != 3 && argc != 5){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -137,36 +140,44 @@ int main(int argc, char *argv[]){
         ip_address = argv[2];
         port = argv[4];
     }
-    while (1){
+    while (1){ 
         fgets(input, sizeof(input), stdin);
-        strcpy(command,input);
-        command = strtok(command, " ");
+        // TEM BUG QUANDO COMEÇA COM UM ERRADO
+        size_t len = strlen(input);
+        if (len > 0 && input[len - 1] == '\n')
+            input[len - 1] = '\0';
+
+        while (input[i] != ' ' && input[i] != '\0') {
+            command[i] = input[i];
+            i++;
+        }
+        command[i] = '\0';
         if (strcmp(command,"start") == 0){
             start(input, ip_address, port);
-            continue;
+            
         }
-        if (strcmp(command,"try") == 0){
+        else if (strcmp(command,"try") == 0){
             
             continue;
         }
-        if (strcmp(command,"quit") == 0){
+        else if (strcmp(command,"quit") == 0){
             
             continue;
         }
-        if (strcmp(command,"exit") == 0){
+        else if (strcmp(command,"exit") == 0){
             
             continue;
         }
-        if (strcmp(command,"debug") == 0){
+        else if (strcmp(command,"debug") == 0){
             continue;
         }
         // .......... Faltam if acho eu
         else
             fprintf(stderr, "Incorrect Command\n");
         
-        memset(input, 0, sizeof(input));
-        memset(command, 0, sizeof(command));
-
+        memset(input, 0, 128);
+        memset(command, 0, 50);
+        i = 0;
     }
 
     exit(EXIT_SUCCESS);
