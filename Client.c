@@ -23,7 +23,7 @@ void start(char* line, char* p_address, char* port){ //UDP protocol
 
     char* msg = UDP(line,p_address,port);
     //Analise do erro/ começo
-
+    printf("%s\n",msg);
     //temos de criar file e dar erro se ja existir jogo nao acabado
 }
 
@@ -107,7 +107,7 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
 
 int main(int argc, char *argv[]){
     char *port, *ip_address;
-    char input[50];
+    char input[50] = {};
     char *command;
 
     if (argc != 1 && argc != 3 && argc != 5){
@@ -163,6 +163,9 @@ int main(int argc, char *argv[]){
         // .......... Faltam if acho eu
         else
             fprintf(stderr, "Incorrect Command\n");
+        
+        memset(input, 0, sizeof(input));
+        memset(command, 0, sizeof(command));
 
     }
 

@@ -12,15 +12,49 @@
 #include <stddef.h>
 
 int verbose_mode = 0; // 0 desativado; 1 ativado
+int game_started = 0; // 0 nao ha nenhum; fd há jogo e é esse o file 
+
+
+char* start(char* line){
+
+    char* PLID, *time, *endptr;
+    long int num_PLID, num_time;
+    
+    if(game_started == 1)
+        return "NOK";
+    
+    line = strtok(line, " ");
+    PLID = strtok(NULL, " ");
+    time = strtok(NULL, " ");
+    printf("time%s",time);
+    if (strlen(PLID) != 6){
+        return "ERR";
+    }
+    
+    num_PLID = strtol(PLID, &endptr, 10);
+    num_time = strtol(time, &endptr, 10);
+    if (num_PLID == 0 || num_time == 0 || num_time > 600)
+        return "ERR";
+    
+    
+    
+    //CRIAR FILE E FAZER O RANDOM!!!
+    game_started = 1;
+
+    return "OK";
+}
+
+
+
 
 int main(int argc, char *argv[]){
-    char *port;
+    char *port, *command;
     struct addrinfo hints,*res;
     struct sockaddr_in addr;
     socklen_t addrlen;
-    int fd,errcode;
+    int fd, errcode;
     ssize_t n;
-    char buffer[128];
+    char buffer[128] = {};
 
     if (argc <= 0 || argc > 4){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -50,7 +84,7 @@ int main(int argc, char *argv[]){
 
     //PARA UDP
     fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
-    if(fd==-1)/*error*/
+    if(fd == -1)/*error*/
         exit(EXIT_FAILURE);
 
     memset(&hints,0,sizeof hints);
@@ -59,24 +93,45 @@ int main(int argc, char *argv[]){
     hints.ai_flags = AI_PASSIVE;
 
     errcode=getaddrinfo(NULL,port,&hints,&res);
-    if(errcode!=0)/*error*/
+    if(errcode != 0)/*error*/
         exit(EXIT_FAILURE);
     
     n = bind(fd,res->ai_addr, res->ai_addrlen);
-    if(n==-1)/*error*/
+    if(n == -1)/*error*/
         exit(EXIT_FAILURE);
+    
     while (1){
         addrlen=sizeof(addr);
-        n=recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen);
-        if(n==-1)/*error*/
+        if(recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
             exit(EXIT_FAILURE);
+        
+        command="start";
 
-        write(1,"received: ", 10);//stdout
-        write(1,buffer,n);
-        n=sendto(fd, buffer, n, 0, (struct sockaddr*)&addr, addrlen);
-        if(n == -1)/*error*/
-            exit(EXIT_FAILURE);
+        // strcpy(command,buffer);    
+        // strtok(command, " ");
 
+        if (strcmp(command,"start") == 0){
+            char* res_msg = start(buffer);
+            if(sendto(fd, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
+                exit(EXIT_FAILURE);
+            continue;
+        }
+        if (strcmp(command,"try") == 0){
+            
+            continue;
+        }
+        if (strcmp(command,"quit") == 0){
+            
+            continue;
+        }
+        if (strcmp(command,"exit") == 0){
+            
+            continue;
+        }
+        if (strcmp(command,"debug") == 0){
+            continue;
+        }
+        memset(buffer, 0, sizeof(buffer));
     }
     freeaddrinfo(res);
 

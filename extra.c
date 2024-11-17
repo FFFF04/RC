@@ -75,7 +75,7 @@ char* UDP(char* line, char* ip_address, char* port){
     struct sockaddr_in addr;
     socklen_t addrlen;
 
-    char buffer[128];
+    char buffer[128] = {};
     char* res_msg;
     
     memset(&act,0,sizeof act);
@@ -101,10 +101,11 @@ char* UDP(char* line, char* ip_address, char* port){
     
     freeaddrinfo(res);
     addrlen=sizeof(addr);
-    n=recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
-    if(n==-1)/*error*/
+    n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+    printf("aqui %ld\n",strlen(buffer));
+    res_msg = buffer;
+    if(n == -1)/*error*/
         exit(EXIT_FAILURE);
     close(fd);
-    res_msg = buffer;
     return res_msg;
 }
