@@ -10,10 +10,9 @@
 #include <netdb.h>
 #include <string.h>
 #include <signal.h>
+#include <stddef.h>
 
-
-
-void start(char* PLID, int max_playtime){ //UDP protocol
+void start(char* line, char* p_address, char* port){ //UDP protocol
     /* following this command the Player application sends a 
     message to the GS, using the UDP protocol, asking to start a
     new game, provides the player identification PLID and indicates the
@@ -21,6 +20,10 @@ void start(char* PLID, int max_playtime){ //UDP protocol
     the game (it cannot exceed 600 seconds).
     The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
     that it can start playing. The Player application displays this information. */
+
+    char* msg = UDP(line,p_address,port);
+    printf("ola\n");
+    //Analise do erro/ começo
 
     //temos de criar file e dar erro se ja existir jogo nao acabado
 }
@@ -76,7 +79,6 @@ void quit(){ //UDP protocol
     under way, the GS server should be informed, by sending a message using the
     UDP protocol.*/
 
-
     //temos de apagar file acho eu
 }
 
@@ -105,7 +107,8 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
 
 
 int main(int argc, char *argv[]){
-    char *port, *ip_address, *input;
+    char *port, *ip_address;
+    char input[50];
 
     if (argc != 1 && argc != 3 && argc != 5){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -113,12 +116,10 @@ int main(int argc, char *argv[]){
     }
     if (argc == 1){
         // IP DO NOSSO PC
-        ip_address = getIPadress();
+        ip_address = getIPaddress();
 
         // Port 58000 + nº Grupo(14)
         port = "58014";
-
-        //printf("%s\n%s\n",ip_address, port);
     }
     if (argc == 3){
         if (strcmp(argv[1],"-n")){
@@ -128,24 +129,20 @@ int main(int argc, char *argv[]){
         }       
         else{
             // IP DO NOSSO PC
-            ip_address = getIPadress();
+            ip_address = getIPaddress();
             port = argv[2];
         }
-        //printf("%s\n%s\n",ip_address, port);
     }
     else{
         ip_address = argv[2];
         port = argv[4];
-        //printf("%s\n%s\n",ip_address, port);
     }
-
     while (1){
         fgets(input, sizeof(input), stdin);
-
         char *command = strtok(input, " ");
 
         if (strcmp(command,"start")){
-            
+            start(command, ip_address, port);
             continue;
         }
         if (strcmp(command,"try")){
@@ -160,13 +157,13 @@ int main(int argc, char *argv[]){
             
             continue;
         }
-        
         if (strcmp(command,"debug")){
-            
             continue;
         }
+        // .......... Faltam if acho eu
+        else
+            fprintf(stderr, "Incorrect Command\n");
 
-        
     }
 
     exit(EXIT_SUCCESS);
