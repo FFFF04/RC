@@ -22,7 +22,6 @@ void start(char* line, char* p_address, char* port){ //UDP protocol
     that it can start playing. The Player application displays this information. */
 
     char* msg = UDP(line,p_address,port);
-    printf("ola\n");
     //Analise do erro/ começo
 
     //temos de criar file e dar erro se ja existir jogo nao acabado
@@ -109,6 +108,7 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
 int main(int argc, char *argv[]){
     char *port, *ip_address;
     char input[50];
+    char *command;
 
     if (argc != 1 && argc != 3 && argc != 5){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -121,8 +121,8 @@ int main(int argc, char *argv[]){
         // Port 58000 + nº Grupo(14)
         port = "58014";
     }
-    if (argc == 3){
-        if (strcmp(argv[1],"-n")){
+    else if (argc == 3){
+        if (strcmp(argv[1],"-n") == 0){
             ip_address = argv[2];
             // Port 58000 + nº Grupo(14)
             port = "58014";
@@ -139,25 +139,25 @@ int main(int argc, char *argv[]){
     }
     while (1){
         fgets(input, sizeof(input), stdin);
-        char *command = strtok(input, " ");
-
-        if (strcmp(command,"start")){
-            start(command, ip_address, port);
+        strcpy(command,input);
+        command = strtok(command, " ");
+        if (strcmp(command,"start") == 0){
+            start(input, ip_address, port);
             continue;
         }
-        if (strcmp(command,"try")){
+        if (strcmp(command,"try") == 0){
             
             continue;
         }
-        if (strcmp(command,"quit")){
+        if (strcmp(command,"quit") == 0){
             
             continue;
         }
-        if (strcmp(command,"exit")){
+        if (strcmp(command,"exit") == 0){
             
             continue;
         }
-        if (strcmp(command,"debug")){
+        if (strcmp(command,"debug") == 0){
             continue;
         }
         // .......... Faltam if acho eu

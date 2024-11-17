@@ -41,7 +41,7 @@ void send_msg(int file, char const *str) {
   size_t len = strlen(str);
   size_t written = 0;
   while (written < len) {
-    ssize_t ret = write(file, str + written, len - written);
+    ssize_t ret = write(file, str + written, len + written);
     if (ret < 0) {
       fprintf(stderr, "Write failed\n");
       exit(EXIT_FAILURE);
@@ -72,34 +72,39 @@ char* UDP(char* line, char* ip_address, char* port){
     int fd,n;
     ssize_t nbytes,nleft,nwritten,nread;
     struct sigaction act;
+    struct sockaddr_in addr;
+    socklen_t addrlen;
+
+    char buffer[128];
     char* res_msg;
     
     memset(&act,0,sizeof act);
     act.sa_handler=SIG_IGN;
     if(sigaction(SIGPIPE,&act,NULL) == -1)/*error*/
-        exit(1);
-    printf("ola\n");
-    fd = socket(AF_INET,SOCK_STREAM,0);//TCP socket
+        exit(EXIT_FAILURE);
+
+    fd = socket(AF_INET,SOCK_DGRAM,0);//TCP socket
     if(fd == -1)
-        exit(1);//error
+        exit(EXIT_FAILURE);//error
 
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET;//IPv4
-    hints.ai_socktype=SOCK_STREAM;//TCP socket
+    hints.ai_socktype=SOCK_DGRAM;//UDP socket
+   
+    n = getaddrinfo(ip_address,port,&hints,&res);
+    if(n != 0)/*error*/
+        exit(EXIT_FAILURE); 
     
-    n=getaddrinfo(ip_address,port,&hints,&res);
-    if(n!=0)/*error*/
-        exit(1);
-    
-    n=connect(fd,res->ai_addr,res->ai_addrlen);
+    n=sendto(fd, line, strlen(line), 0, res->ai_addr, res->ai_addrlen);
     if(n==-1)/*error*/
-        exit(1);
-
-    send_msg(fd,line);
-
-    read_msg(res_msg,fd,84);
-
+        exit(EXIT_FAILURE);
+    
+    freeaddrinfo(res);
+    addrlen=sizeof(addr);
+    n=recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+    if(n==-1)/*error*/
+        exit(EXIT_FAILURE);
     close(fd);
-
+    res_msg = buffer;
     return res_msg;
 }

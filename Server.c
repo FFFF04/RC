@@ -30,8 +30,8 @@ int main(int argc, char *argv[]){
         // Port 58000 + nº Grupo(14)
         port = "58014";
     }
-    if (argc == 2){
-        if (strcmp(argv[1],"-p"))
+    else if (argc == 2){
+        if (strcmp(argv[1],"-p") == 0)
             port = argv[2];
 
         else{
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
     //PARA UDP
     fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
     if(fd==-1)/*error*/
-        exit(1);
+        exit(EXIT_FAILURE);
 
     memset(&hints,0,sizeof hints);
     hints.ai_family= AF_UNSPEC;//IPv4
@@ -59,25 +59,24 @@ int main(int argc, char *argv[]){
     hints.ai_flags = AI_PASSIVE;
 
     errcode=getaddrinfo(NULL,port,&hints,&res);
-    if(errcode!=0){/*error*/
-        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(errcode));
-        return 1;
-    }
+    if(errcode!=0)/*error*/
+        exit(EXIT_FAILURE);
+    
     n = bind(fd,res->ai_addr, res->ai_addrlen);
     if(n==-1)/*error*/
-        exit(1);
+        exit(EXIT_FAILURE);
     while (1){
         addrlen=sizeof(addr);
         n=recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen);
         if(n==-1)/*error*/
-            exit(1);
-        printf("%s\n",buffer);
+            exit(EXIT_FAILURE);
 
-        // write(1,"received: ",10);//stdout
-        // write(1,buffer,n);
-        // n=sendto(fd,buffer,n,0,(struct sockaddr*)&addr,addrlen);
-        // if(n==-1)/*error*/
-        //     exit(1);
+        write(1,"received: ", 10);//stdout
+        write(1,buffer,n);
+        n=sendto(fd, buffer, n, 0, (struct sockaddr*)&addr, addrlen);
+        if(n == -1)/*error*/
+            exit(EXIT_FAILURE);
+
     }
     freeaddrinfo(res);
 
