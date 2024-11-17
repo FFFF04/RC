@@ -21,6 +21,8 @@ void start(char* PLID, int max_playtime){ //UDP protocol
     the game (it cannot exceed 600 seconds).
     The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
     that it can start playing. The Player application displays this information. */
+
+    //temos de criar file e dar erro se ja existir jogo nao acabado
 }
 
 
@@ -38,6 +40,8 @@ void try(char C1, char C2, char C3, char C4){ //UDP protocol
     secret key but are incorrectly positioned (nW). If nB = 4 the secret code has
     been correctly guessed and the player wins the game. The Player application
     displays the received information.*/
+
+    // temos de dar erro se nao existir nenhum jogo ativo
 }
 
 
@@ -71,6 +75,9 @@ void quit(){ //UDP protocol
     /*the player can ask to terminate the game at any moment. If a game was
     under way, the GS server should be informed, by sending a message using the
     UDP protocol.*/
+
+
+    //temos de apagar file acho eu
 }
 
 
@@ -98,7 +105,7 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
 
 
 int main(int argc, char *argv[]){
-    char *port, *ip_address;
+    char *port, *ip_address, *input;
 
     if (argc != 1 && argc != 3 && argc != 5){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -114,7 +121,7 @@ int main(int argc, char *argv[]){
         //printf("%s\n%s\n",ip_address, port);
     }
     if (argc == 3){
-        if (strcmp(argv[1],"-n") == 0){
+        if (strcmp(argv[1],"-n")){
             ip_address = argv[2];
             // Port 58000 + nº Grupo(14)
             port = "58014";
@@ -132,14 +139,35 @@ int main(int argc, char *argv[]){
         //printf("%s\n%s\n",ip_address, port);
     }
 
-    /*
-    Agora ele pode COMEÇAR(START) 
-    ou
-    TERMINAR(QUIT) um jogo que tenha sido gravado
-    ou
-    EXIT da aplicação
-    e muitas outras....
-    */
+    while (1){
+        fgets(input, sizeof(input), stdin);
+
+        char *command = strtok(input, " ");
+
+        if (strcmp(command,"start")){
+            
+            continue;
+        }
+        if (strcmp(command,"try")){
+            
+            continue;
+        }
+        if (strcmp(command,"quit")){
+            
+            continue;
+        }
+        if (strcmp(command,"exit")){
+            
+            continue;
+        }
+        
+        if (strcmp(command,"debug")){
+            
+            continue;
+        }
+
+        
+    }
 
     exit(EXIT_SUCCESS);
 }

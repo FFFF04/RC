@@ -25,7 +25,7 @@ int main(int argc, char *argv[]){
         printf("%s\n", port);
     }
     if (argc == 2){
-        if (strcmp(argv[1],"-p") == 0)
+        if (strcmp(argv[1],"-p"))
             port = argv[2];
 
         else{
@@ -39,6 +39,11 @@ int main(int argc, char *argv[]){
         verbose_mode = 1;
         printf("%s\n", port);
     }
+
+
+    //ver se existe jogo nao acabado se existir abrir logo o jogo
+    //Ter variavel para ser mais facil verificar depois
+    // se esta a 1 entao encontrou se nao esta a 0
 
     exit(EXIT_SUCCESS);
 }
