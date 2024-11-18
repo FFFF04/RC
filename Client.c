@@ -1,5 +1,4 @@
 #include "Client.h"
-#include "Server.h"
 #include "extra.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +11,13 @@
 #include <signal.h>
 #include <stddef.h>
 
-void start(char* line, char* p_address, char* port){ //UDP protocol
+
+char *port, *ip_address;
+char plId[6];
+int nT = 1;
+
+
+void start(char* arguments){ //UDP protocol
     /* following this command the Player application sends a 
     message to the GS, using the UDP protocol, asking to start a
     new game, provides the player identification PLID and indicates the
@@ -20,11 +25,13 @@ void start(char* line, char* p_address, char* port){ //UDP protocol
     the game (it cannot exceed 600 seconds).
     The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
     that it can start playing. The Player application displays this information. */
-
-    char* res_msg = (char*) calloc(128,1);
-    char msg[256] = "SNG ";  
-    strcat(msg,line);
-    UDP(msg,p_address,port,res_msg);
+    for(int i=0; i<6; i++){
+        plId[i]=arguments[i];
+    }
+    char* res_msg = (char*) calloc(8,1);
+    char msg[15] = "SNG ";  
+    strcat(msg,arguments);
+    UDP(msg,ip_address,port,res_msg);
     //Analise do erro/ começo
     printf("%s\n",res_msg);
     free(res_msg);
@@ -33,7 +40,7 @@ void start(char* line, char* p_address, char* port){ //UDP protocol
 
 
 
-void try(char C1, char C2, char C3, char C4){ //UDP protocol
+void try(char* arguments){ //UDP protocol
     /* red (R), green (G), blue (B), yellow (Y), orange (O) and purple (P)*/
 
     /*the Player application sends a message to the GS,
@@ -46,6 +53,24 @@ void try(char C1, char C2, char C3, char C4){ //UDP protocol
     secret key but are incorrectly positioned (nW). If nB = 4 the secret code has
     been correctly guessed and the player wins the game. The Player application
     displays the received information.*/
+
+    char* res_msg = (char*) calloc(22,1);
+    char msg[21] = "TRY ";
+    char nTstr[1];
+    strcat(msg,plId);
+    strcat(msg,arguments);  
+    printf("%s\n", msg);
+    sprintf(nTstr, " %d\n", nT);
+    strcat(msg, nTstr);
+    printf("%s\n", msg);
+    // UDP(msg,ip_address,port,res_msg);
+    //Analise do erro/ começo
+    printf("%s\n",res_msg);
+    nT++;
+    free(res_msg);
+
+
+    
 
     // temos de dar erro se nao existir nenhum jogo ativo
 }
@@ -110,9 +135,8 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
 
 
 int main(int argc, char *argv[]){
-    char *port, *ip_address, *command, *arguments;
+    char *arguments;
     char input[128];
-    // char command[50];
     int i = 0;
 
     if (argc != 1 && argc != 3 && argc != 5){
@@ -144,27 +168,18 @@ int main(int argc, char *argv[]){
     }
     while (1){ 
         fgets(input, sizeof(input), stdin);
-        // TEM BUG QUANDO COMEÇA COM UM ERRADO
-        // size_t len = strlen(input);
-        // if (len > 0 && input[len - 1] == '\n')
-        //     input[len - 1] = '\0';
 
-        // while (input[i] != ' ' && input[i] != '\0') {
-        //     command[i] = input[i];
-        //     i++;
-        // }
-        // command[i] = '\0';
-        command = strtok(input," ");
+        strtok(input," ");
         
         arguments = strtok(NULL, "");
 
         if (strcmp(input,"start") == 0){
-            start(arguments, ip_address, port);
+            start(arguments);
             
         }
         else if (strcmp(input,"try") == 0){
-            
-            continue;
+            printf("%s\n", input);
+            try(arguments);
         }
         else if (strcmp(input,"quit") == 0){
             
@@ -182,8 +197,6 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "Incorrect Command\n");
         
         memset(input, 0, strlen(input));
-        memset(command, 0, strlen(command));
-        memset(command, 0, strlen(arguments));
         i = 0;
     }
 
