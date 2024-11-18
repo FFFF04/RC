@@ -21,11 +21,13 @@ void start(char* line, char* p_address, char* port){ //UDP protocol
     The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
     that it can start playing. The Player application displays this information. */
 
-    char* msg = (char*) calloc(128,1);
-    UDP(line,p_address,port,msg);
+    char* res_msg = (char*) calloc(128,1);
+    char msg[256] = "SNG ";  
+    strcat(msg,line);
+    UDP(msg,p_address,port,res_msg);
     //Analise do erro/ começo
-    printf("%s\n",msg);
-    free(msg);
+    printf("%s\n",res_msg);
+    free(res_msg);
     //temos de criar file e dar erro se ja existir jogo nao acabado
 }
 
@@ -108,9 +110,9 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
 
 
 int main(int argc, char *argv[]){
-    char *port, *ip_address;
+    char *port, *ip_address, *command, *arguments;
     char input[128];
-    char command[50];
+    // char command[50];
     int i = 0;
 
     if (argc != 1 && argc != 3 && argc != 5){
@@ -143,40 +145,45 @@ int main(int argc, char *argv[]){
     while (1){ 
         fgets(input, sizeof(input), stdin);
         // TEM BUG QUANDO COMEÇA COM UM ERRADO
-        size_t len = strlen(input);
-        if (len > 0 && input[len - 1] == '\n')
-            input[len - 1] = '\0';
+        // size_t len = strlen(input);
+        // if (len > 0 && input[len - 1] == '\n')
+        //     input[len - 1] = '\0';
 
-        while (input[i] != ' ' && input[i] != '\0') {
-            command[i] = input[i];
-            i++;
-        }
-        command[i] = '\0';
-        if (strcmp(command,"start") == 0){
-            start(input, ip_address, port);
+        // while (input[i] != ' ' && input[i] != '\0') {
+        //     command[i] = input[i];
+        //     i++;
+        // }
+        // command[i] = '\0';
+        command = strtok(input," ");
+        
+        arguments = strtok(NULL, "");
+
+        if (strcmp(input,"start") == 0){
+            start(arguments, ip_address, port);
             
         }
-        else if (strcmp(command,"try") == 0){
-            
-            continue;
-        }
-        else if (strcmp(command,"quit") == 0){
-            
-            continue;
-        }
-        else if (strcmp(command,"exit") == 0){
+        else if (strcmp(input,"try") == 0){
             
             continue;
         }
-        else if (strcmp(command,"debug") == 0){
+        else if (strcmp(input,"quit") == 0){
+            
+            continue;
+        }
+        else if (strcmp(input,"exit") == 0){
+            
+            continue;
+        }
+        else if (strcmp(input,"debug") == 0){
             continue;
         }
         // .......... Faltam if acho eu
         else
             fprintf(stderr, "Incorrect Command\n");
         
-        memset(input, 0, 128);
-        memset(command, 0, 50);
+        memset(input, 0, strlen(input));
+        memset(command, 0, strlen(command));
+        memset(command, 0, strlen(arguments));
         i = 0;
     }
 

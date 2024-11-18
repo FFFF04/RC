@@ -25,7 +25,7 @@ int clock_my = 0;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-char* start(char* line){
+char* start(char* arguments){
 
     srand((unsigned int) time(NULL));
 
@@ -36,26 +36,25 @@ char* start(char* line){
     if(game_started == 1)
         return "NOK";
     
-    line = strtok(line, " ");
-    PLID = strtok(NULL, " ");
+    PLID = strtok(arguments, " ");
     time = strtok(NULL, " ");
 
     if (strlen(PLID) != 6)
-        return "ERR";
+        return "RSG ERR";
     
     for (size_t i = 0; i < strlen(PLID); i++){
         if (isdigit(PLID[i]) == 0)
-            return "ERR";
+            return "RSG ERR";
     }
     for (size_t i = 0; i < strlen(time); i++){
         if (isdigit(time[i]) == 0)
-            return "ERR";
+            return "RSG ERR";
     }
     
     num_PLID = strtol(PLID, &endptr, 10);
     num_time = strtol(time, &endptr, 10);
     if (num_PLID == 0 || num_time == 0 || num_time > 600)
-        return "ERR";
+        return "RSG ERR";
     
     //CRIAR FILE com PLID que vai ser o nome mas com o que a frente?
     fptr = fopen(strcat(PLID,".txt"), "w"); // QUAL É O NOME QUE É SUPOSTO DARMOS A ESTA PORRA???? 
@@ -74,23 +73,21 @@ char* start(char* line){
     // POR AGORA:
     clock_my = num_time;
 
-    return "OK";
+    return "RSG OK";
 }
 
 
 
 
 int main(int argc, char *argv[]){
-    char *port;
+    char *port, *command, *arguments;
     struct addrinfo hints,*res;
     struct sockaddr_in addr;
     socklen_t addrlen;
     struct sigaction act;
     int fd, errcode;
-    int i = 0;
     ssize_t n;
     char buffer[128];
-    char command[50];
 
     if (argc <= 0 || argc > 4){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -147,18 +144,11 @@ int main(int argc, char *argv[]){
         if(recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
             exit(EXIT_FAILURE);
         
-        size_t len = strlen(buffer);
-        if (len > 0 && buffer[len - 1] == '\n')
-            buffer[len - 1] = '\0';
-
-        while (buffer[i] != ' ' && buffer[i] != '\0') {
-            command[i] = buffer[i];
-            i++;
-        }
-        command[i] = '\0';
-        i = 0;
+        command = strtok(buffer, " ");
+        arguments = strtok(NULL, "");
+ 
         if (strcmp(command,"start") == 0){
-            char* res_msg = start(buffer);
+            char* res_msg = start(arguments);
             if(sendto(fd, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
                 exit(EXIT_FAILURE);
             continue;
