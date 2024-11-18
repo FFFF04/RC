@@ -34,27 +34,27 @@ char* start(char* arguments){
     char solution[4];
     
     if(game_started == 1)
-        return "NOK";
+        return "RSG NOK\n";
     
     PLID = strtok(arguments, " ");
     time = strtok(NULL, " ");
 
     if (strlen(PLID) != 6)
-        return "RSG ERR";
+        return "RSG ERR\n";
     
     for (size_t i = 0; i < strlen(PLID); i++){
         if (isdigit(PLID[i]) == 0)
-            return "RSG ERR";
+            return "RSG ERR\n";
     }
-    for (size_t i = 0; i < strlen(time); i++){
-        if (isdigit(time[i]) == 0)
-            return "RSG ERR";
+    for (size_t i = 0; i < strlen(time)-1; i++){
+        if (isdigit(time[i]) == 0 )
+            return "RSG ERR\n";
     }
     
     num_PLID = strtol(PLID, &endptr, 10);
     num_time = strtol(time, &endptr, 10);
     if (num_PLID == 0 || num_time == 0 || num_time > 600)
-        return "RSG ERR";
+        return "RSG ERR\n";
     
     //CRIAR FILE com PLID que vai ser o nome mas com o que a frente?
     fptr = fopen(strcat(PLID,".txt"), "w"); // QUAL É O NOME QUE É SUPOSTO DARMOS A ESTA PORRA???? 
@@ -73,7 +73,7 @@ char* start(char* arguments){
     // POR AGORA:
     clock_my = num_time;
 
-    return "RSG OK";
+    return "RSG OK\n";
 }
 
 
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
         command = strtok(buffer, " ");
         arguments = strtok(NULL, "");
  
-        if (strcmp(command,"start") == 0){
+        if (strcmp(command,"SNG") == 0){
             char* res_msg = start(arguments);
             if(sendto(fd, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
                 exit(EXIT_FAILURE);
@@ -157,15 +157,11 @@ int main(int argc, char *argv[]){
             
             continue;
         }
-        if (strcmp(command,"quit") == 0){
+        if (strcmp(command,"QUT") == 0){
             
             continue;
         }
-        if (strcmp(command,"exit") == 0){
-            
-            continue;
-        }
-        if (strcmp(command,"debug") == 0){
+        if (strcmp(command,"DBG") == 0){
             continue;
         }
         memset(buffer, 0, sizeof(buffer));

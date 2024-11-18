@@ -25,15 +25,26 @@ void start(char* arguments){ //UDP protocol
     the game (it cannot exceed 600 seconds).
     The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
     that it can start playing. The Player application displays this information. */
-    for(int i=0; i<6; i++){
-        plId[i]=arguments[i];
+    for(int i = 0; i < 6; i++){
+        plId[i] = arguments[i];
     }
     char* res_msg = (char*) calloc(8,1);
-    char msg[15] = "SNG ";  
+    char *protocol;
+    char msg[15];  
     strcat(msg,arguments);
+    snprintf(msg, sizeof(msg), "SNG %s", arguments);
     UDP(msg,ip_address,port,res_msg);
-    //Analise do erro/ começo
-    printf("%s\n",res_msg);
+
+    strtok(res_msg," ");
+    protocol = strtok(NULL, "");
+
+    if (strcmp(protocol,"ERR\n") == 0)
+        fprintf(stderr, "Incorrect Arguments in fuction 'start'\n");
+    else if (strcmp(protocol,"NOK\n") == 0)
+        fprintf(stderr, "Game already Created\n");
+    else
+        fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
+    
     free(res_msg);
     //temos de criar file e dar erro se ja existir jogo nao acabado
 }
@@ -55,17 +66,16 @@ void try(char* arguments){ //UDP protocol
     displays the received information.*/
 
     char* res_msg = (char*) calloc(22,1);
-    char msg[21] = "TRY ";
-    char nTstr[1];
-    strcat(msg,plId);
-    strcat(msg,arguments);  
-    printf("%s\n", msg);
-    sprintf(nTstr, " %d\n", nT);
-    strcat(msg, nTstr);
-    printf("%s\n", msg);
-    // UDP(msg,ip_address,port,res_msg);
+    char msg[22];
+
+    snprintf(msg, sizeof(msg), "TRY %s %s %d\n", plId, strtok(arguments,"\n"), nT);
+
+    printf("%s",msg);
+
+    //UDP(msg,ip_address,port,res_msg);
     //Analise do erro/ começo
     printf("%s\n",res_msg);
+    
     nT++;
     free(res_msg);
 
@@ -175,10 +185,8 @@ int main(int argc, char *argv[]){
 
         if (strcmp(input,"start") == 0){
             start(arguments);
-            
         }
         else if (strcmp(input,"try") == 0){
-            printf("%s\n", input);
             try(arguments);
         }
         else if (strcmp(input,"quit") == 0){
@@ -197,7 +205,6 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "Incorrect Command\n");
         
         memset(input, 0, strlen(input));
-        i = 0;
     }
 
     exit(EXIT_SUCCESS);
