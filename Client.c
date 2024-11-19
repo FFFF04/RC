@@ -25,13 +25,10 @@ void start(char* arguments){ //UDP protocol
     the game (it cannot exceed 600 seconds).
     The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
     that it can start playing. The Player application displays this information. */
-    for(int i = 0; i < 6; i++){
-        plId[i] = arguments[i];
-    }
+    
     char* res_msg = (char*) calloc(8,1);
     char *protocol;
-    char msg[15];  
-    strcat(msg,arguments);
+    char msg[17];  
     snprintf(msg, sizeof(msg), "SNG %s", arguments);
     UDP(msg,ip_address,port,res_msg);
 
@@ -42,8 +39,12 @@ void start(char* arguments){ //UDP protocol
         fprintf(stderr, "Incorrect Arguments in fuction 'start'\n");
     else if (strcmp(protocol,"NOK\n") == 0)
         fprintf(stderr, "Game already Created\n");
-    else
+    else{
         fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
+        for(int i = 0; i < 6; i++){
+            plId[i] = arguments[i];
+        }
+    }
     
     free(res_msg);
     //temos de criar file e dar erro se ja existir jogo nao acabado
@@ -64,17 +65,22 @@ void try(char* arguments){ //UDP protocol
     secret key but are incorrectly positioned (nW). If nB = 4 the secret code has
     been correctly guessed and the player wins the game. The Player application
     displays the received information.*/
-
+    if (strcmp(plId,"") == 0){
+        fprintf(stderr, "No Game Started yet!!!!\n");
+        return;
+    }
     char* res_msg = (char*) calloc(22,1);
     char msg[22];
-
+    
+    
     snprintf(msg, sizeof(msg), "TRY %s %s %d\n", plId, strtok(arguments,"\n"), nT);
 
     printf("%s",msg);
 
     //UDP(msg,ip_address,port,res_msg);
-    //Analise do erro/ começo
-    printf("%s\n",res_msg);
+
+    //FALTA Analise do RES_MSG
+    //printf("%s\n",res_msg);
     
     nT++;
     free(res_msg);
@@ -87,7 +93,7 @@ void try(char* arguments){ //UDP protocol
 
 
 
-void show_trials(){ //TCP session
+void show_trials(char *arguments){ //TCP session
     /*following this command the Player establishes a
     TCP session with the GS and sends a message asking to receive a list of
     previously made trials and the respective results. In reply, the GS sends a text
@@ -96,11 +102,17 @@ void show_trials(){ //TCP session
     the list of trials and the corresponding results is displayed by the Player
     application.
     */
+
+    if (strcmp(plId,"") == 0){
+        fprintf(stderr, "No Game Started yet!!!!\n");
+        return;
+    }
+
 }
 
 
 
-void scoreboard(){ //TCP session
+void scoreboard(char *arguments){ //TCP session
     /*following this command the Player establishes a TCP
     session with the GS and sends a message asking to receive an updated
     scoreboard. In reply, the GS sends a text file containing the top 10 scores
@@ -108,6 +120,11 @@ void scoreboard(){ //TCP session
     contains scores for games where the user won the game and discovered the
     secret key. After receiving the reply from the GS, the scoreboard is displayed as
     a numbered list.*/
+
+    if (strcmp(plId,"") == 0){
+        fprintf(stderr, "No Game Started yet!!!!\n");
+        return;
+    }
 }
 
 
@@ -117,7 +134,26 @@ void quit(){ //UDP protocol
     under way, the GS server should be informed, by sending a message using the
     UDP protocol.*/
 
+    if (strcmp(plId,"") == 0){
+        fprintf(stderr, "No Game Started yet!!!!\n");
+        return;
+    }
+
+    char* res_msg = (char*) calloc(22,1);
+    char msg[22];
+
+    snprintf(msg, sizeof(msg), "QUT %s\n", plId);
+    //UDP(msg,ip_address,port,res_msg);
+    printf("%s",msg);
+    //FALTA Analise do RES_MSG
+
+    free(res_msg);
+    memset(plId,0,sizeof(plId));
+    printf("%s\n",plId);
+
+
     //temos de apagar file acho eu
+
 }
 
 
@@ -126,11 +162,21 @@ void EXIT(){ //UDP protocol
     /*the player asks to exit the Player application. If a game was under way,
     the GS server should be informed, by sending a message using the UDP protocol.
     */
+
+    char* res_msg = (char*) calloc(22,1);
+    char msg[11];
+    snprintf(msg, sizeof(msg), "QUT %s\n", plId);
+    //UDP(msg,ip_address,port,res_msg);
+    printf("%s",msg);
+    //Analise do erro
+
+    free(res_msg);
+    exit(EXIT_SUCCESS);
 }
 
 
 
-void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //UDP protocol
+void debug(char *arguments){ //UDP protocol
     /*following this command
     the Player starts a game in debug mode. It sends a message to the GS, using the
     UDP protocol, asking to start a new game, providing the player identification
@@ -140,6 +186,7 @@ void debug(char* PLID, int max_playtime, char C1, char C2, char C3, char C4){ //
     ongoing game, and if a new game can be started the GS uses the secret key
     provided in the message. The Player application is informed that it can start
     playing.*/
+
 }
 
 
@@ -189,16 +236,20 @@ int main(int argc, char *argv[]){
         else if (strcmp(input,"try") == 0){
             try(arguments);
         }
-        else if (strcmp(input,"quit") == 0){
-            
-            continue;
+        else if (strcmp(input,"show_trials") == 0 || strcmp(input,"st") == 0){
+            show_trials(arguments);
         }
-        else if (strcmp(input,"exit") == 0){
-            
-            continue;
+        else if (strcmp(input,"scoreboard") == 0 || strcmp(input,"sb") == 0){
+            scoreboard(arguments);
+        }
+        else if (strcmp(input,"quit\n") == 0){
+            quit();
+        }
+        else if (strcmp(input,"exit\n") == 0){
+            EXIT();
         }
         else if (strcmp(input,"debug") == 0){
-            continue;
+            debug(arguments);
         }
         // .......... Faltam if acho eu
         else

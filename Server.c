@@ -1,5 +1,4 @@
 #include "Server.h"
-#include "Client.h" 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -57,17 +56,17 @@ char* start(char* arguments){
         return "RSG ERR\n";
     
     //CRIAR FILE com PLID que vai ser o nome mas com o que a frente?
-    fptr = fopen(strcat(PLID,".txt"), "w"); // QUAL É O NOME QUE É SUPOSTO DARMOS A ESTA PORRA???? 
-    if (fptr == NULL) { 
-        fprintf(stderr, "Could not open file\n");
-        exit(EXIT_FAILURE);
-    } 
-    for (size_t i = 0; i < 4; i++)
-        solution[i] = colors[rand() % 6];
-    solution[4] = '\0';
-    fputs(solution,fptr);
-    fputs("\n",fptr);
-    fflush(fptr);
+    // fptr = fopen(strcat(PLID,".txt"), "w"); // QUAL É O NOME QUE É SUPOSTO DARMOS A ESTA PORRA???? 
+    // if (fptr == NULL) { 
+    //     fprintf(stderr, "Could not open file\n");
+    //     exit(EXIT_FAILURE);
+    // } 
+    // for (size_t i = 0; i < 4; i++)
+    //     solution[i] = colors[rand() % 6];
+    // solution[4] = '\0';
+    // fputs(solution,fptr);
+    // fputs("\n",fptr);
+    // fflush(fptr);
     game_started = 1;
     //inicar o relogio aqui com o num_time
     // POR AGORA:
@@ -151,18 +150,13 @@ int main(int argc, char *argv[]){
             char* res_msg = start(arguments);
             if(sendto(fd, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
                 exit(EXIT_FAILURE);
-            continue;
         }
-        if (strcmp(command,"try") == 0){
+        else if (strcmp(command,"try") == 0){
             
-            continue;
         }
-        if (strcmp(command,"QUT") == 0){
-            
-            continue;
+        else if (strcmp(command,"QUT") == 0){
         }
-        if (strcmp(command,"DBG") == 0){
-            continue;
+        else if (strcmp(command,"DBG") == 0){
         }
         memset(buffer, 0, sizeof(buffer));
     }
