@@ -33,7 +33,8 @@ void start(char* arguments){ //UDP protocol
     UDP(msg,ip_address,port,res_msg);
 
     strtok(res_msg," ");
-    protocol = strtok(NULL, "");
+    protocol = strtok(NULL, ""); //se metermos aqui o \n se calhar ja nao é preciso estar na comparação em baixo?
+
 
     if (strcmp(protocol,"ERR\n") == 0)
         fprintf(stderr, "Incorrect Arguments in fuction 'start'\n");
@@ -44,8 +45,6 @@ void start(char* arguments){ //UDP protocol
         for(int i = 0; i < 6; i++){
             plId[i] = arguments[i];
         }
-
-        printf("%s",plId);
     }
     
     free(res_msg);
@@ -67,12 +66,15 @@ void try(char* arguments){ //UDP protocol
     secret key but are incorrectly positioned (nW). If nB = 4 the secret code has
     been correctly guessed and the player wins the game. The Player application
     displays the received information.*/
-    if (strcmp(plId,"") == 0){
+
+    if (strcmp(plId,"") == 0){ //Isto provavelmente n funciona pq não iniciamos a vazio
         fprintf(stderr, "No Game Started yet!!!!\n");
         return;
     }
     char* res_msg = (char*) calloc(22,1);
     char msg[22];
+    char *protocol;
+    char *result;
     
     
     snprintf(msg, sizeof(msg), "TRY %s %s %d\n", plId, strtok(arguments,"\n"), nT);
@@ -81,16 +83,37 @@ void try(char* arguments){ //UDP protocol
 
     //UDP(msg,ip_address,port,res_msg);
 
-    //FALTA Analise do RES_MSG
-    //printf("%s\n",res_msg);
+    strtok(res_msg," ");
+    protocol = strtok(NULL, " ");
+    result = strtok(NULL, "");
     
+    if (strcmp(protocol,"OK") == 0);
+        // ver o que fazer com o result
+    else if (strcmp(protocol,"DUP") == 0){
+        fprintf(stderr, "Repeated guess. Try again!\n");
+        nT--; 
+    }
+    else if (strcmp(protocol,"INV") == 0){
+        //nao tenho a certeza deste
+    }
+    else if (strcmp(protocol,"NOK") == 0){
+        fprintf(stderr, "Player %s does not have an ongoing game.\n", plId); //acho que pode haver mais casos
+    }
+    else if (strcmp(protocol,"ENT") == 0){
+        fprintf(stderr, "No more attempts available.\n"); //revelar chave vencedora
+    }
+    else if (strcmp(protocol,"ETM") == 0){
+        fprintf(stderr, "Time ended.\n"); //revelar chave vencedora
+    }
+    else if (strcmp(protocol,"ERR") == 0){
+        fprintf(stderr, "Incorrect Arguments in fuction 'try'\n"); //acho que dá para escrever este erro de maneira mais "normal"
+    }
+    
+    
+
+
     nT++;
     free(res_msg);
-
-
-    
-
-    // temos de dar erro se nao existir nenhum jogo ativo
 }
 
 
