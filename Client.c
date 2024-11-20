@@ -44,6 +44,8 @@ void start(char* arguments){ //UDP protocol
         for(int i = 0; i < 6; i++){
             plId[i] = arguments[i];
         }
+
+        printf("%s",plId);
     }
     
     free(res_msg);
@@ -186,7 +188,7 @@ void debug(char *arguments){ //UDP protocol
     ongoing game, and if a new game can be started the GS uses the secret key
     provided in the message. The Player application is informed that it can start
     playing.*/
-
+    
 }
 
 
