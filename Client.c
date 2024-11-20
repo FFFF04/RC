@@ -89,6 +89,14 @@ void try(char* arguments){ //UDP protocol
     
     if (strcmp(protocol,"OK") == 0);
         // ver o que fazer com o result
+        /*
+        Pode acontecer 2 casos:
+            OK, YOU WON!!! se nB = 4 ou nT = -1
+            Mas tipo como é que é igual ao anterior se for igual ao anterior e o anterior foi OK
+        ou
+            OK, NOT WON YET. TRY AGAIN! 
+        */
+
     else if (strcmp(protocol,"DUP") == 0){
         fprintf(stderr, "Repeated guess. Try again!\n");
         nT--; 
