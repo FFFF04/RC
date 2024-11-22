@@ -70,7 +70,6 @@ void read_msg(char *prod_consumidor, int file, size_t size) {
 void UDP(char* line, char* ip_address, char* port,char* msg){
     struct addrinfo hints,*res;
     int fd,n;
-    ssize_t nbytes,nleft,nwritten,nread;
     struct sigaction act;
     struct sockaddr_in addr;
     socklen_t addrlen;

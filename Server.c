@@ -30,7 +30,7 @@ char* start(char* arguments){
 
     char* PLID, *time, *endptr;
     long int num_PLID, num_time;
-    char solution[4];
+    //char solution[4];
     
     if(game_started == 1)
         return "RSG NOK\n";

@@ -86,6 +86,9 @@ void try(char* arguments){ //UDP protocol
         ou
             OK, NOT WON YET. TRY AGAIN! 
         */
+
+        // memset(plId,0,sizeof(plId));
+        // nT = 0;
     }
     else if (strcmp(protocol,"DUP\n") == 0){
         fprintf(stdout, "Repeated guess. Try again!\n");
@@ -100,12 +103,16 @@ void try(char* arguments){ //UDP protocol
     else if (strcmp(protocol,"ENT") == 0){
         fprintf(stdout, "No more attempts available.\n");
         result = strtok(NULL, "");
-        printf("Solution: %s",result);
+        printf("Solution: %sBetter luck next time.\n",result);
+        memset(plId,0,sizeof(plId));
+        nT = 0;
     }
     else if (strcmp(protocol,"ETM") == 0){
         fprintf(stdout, "Time ended.\n");
         result = strtok(NULL, "");
-        printf("Solution: %s",result);
+        printf("Solution: %sBetter luck next time.\n",result);
+        memset(plId,0,sizeof(plId));
+        nT = 0;
     }
     else if (strcmp(protocol,"ERR\n") == 0){
         fprintf(stdout, "Incorrect Arguments in fuction 'try'\n"); //acho que dá para escrever este erro de maneira mais "normal"
@@ -131,6 +138,7 @@ void show_trials(char *arguments){ //TCP session
         fprintf(stdout, "No Game Started yet!!!!\n");
         return;
     }
+    printf("%s",arguments);
 
 }
 
@@ -149,6 +157,7 @@ void scoreboard(char *arguments){ //TCP session
         fprintf(stdout, "No Game Started yet!!!!\n");
         return;
     }
+    printf("%s",arguments);
 }
 
 
@@ -183,6 +192,7 @@ void quit(int exit_status){ //UDP protocol
     
     free(res_msg);
     memset(plId,0,sizeof(plId));
+    nT = 1;
     if(exit_status == 1)
         exit(EXIT_SUCCESS);
 }
@@ -251,7 +261,6 @@ void debug(char *arguments){ //UDP protocol
 int main(int argc, char *argv[]){
     char *arguments;
     char input[128];
-    int i = 0;
 
     if (argc != 1 && argc != 3 && argc != 5){
         fprintf(stderr, "Incorrect Arguments\n");
