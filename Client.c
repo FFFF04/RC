@@ -1,4 +1,4 @@
-#include "Client.h"
+//#include "Client.h"
 #include "extra.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,7 +80,7 @@ void try(char* arguments){ //UDP protocol
 
     printf("%s",msg);
 
-    //UDP(msg,ip_address,port,res_msg);
+    UDP(msg,ip_address,port,res_msg);
 
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
@@ -161,30 +161,42 @@ void scoreboard(char *arguments){ //TCP session
 
 
 
-void quit(){ //UDP protocol
+void quit(int exit_status){ //UDP protocol
     /*the player can ask to terminate the game at any moment. If a game was
     under way, the GS server should be informed, by sending a message using the
     UDP protocol.*/
 
-    if (strcmp(plId,"") == 0){
-        fprintf(stderr, "No Game Started yet!!!!\n");
-        return;
-    }
-
     char* res_msg = (char*) calloc(22,1);
+    char *protocol, *result;
     char msg[22];
 
     snprintf(msg, sizeof(msg), "QUT %s\n", plId);
     //UDP(msg,ip_address,port,res_msg);
-    printf("%s",msg);
     //FALTA Analise do RES_MSG
 
+    strtok(res_msg," ");
+    protocol = strtok(NULL, " ");
+    result = strtok(NULL, "");
+
+    if (strcmp(protocol,"OK") == 0)
+        //revelar secret key
+        printf("Solution: %s\n",result);
+
+    else if (strcmp(protocol, "NOK") == 0){
+        fprintf(stderr, "No have an ongoing game.\n"); //acho que pode haver mais casos
+        exit_status = 0;
+    }
+
+    else if(strcmp(protocol, "ERR") == 0){
+        fprintf(stderr, "Error while quitting the game.\n");
+        exit_status = 0;
+    }
+    
+    
     free(res_msg);
     memset(plId,0,sizeof(plId));
-    printf("%s\n",plId);
-
-
-    //temos de apagar file acho eu
+    if(exit_status == 1)
+        exit(EXIT_SUCCESS);
 
 }
 
@@ -195,15 +207,11 @@ void EXIT(){ //UDP protocol
     the GS server should be informed, by sending a message using the UDP protocol.
     */
 
-    char* res_msg = (char*) calloc(22,1);
-    char msg[11];
-    snprintf(msg, sizeof(msg), "QUT %s\n", plId);
-    //UDP(msg,ip_address,port,res_msg);
-    printf("%s",msg);
-    //Analise do erro
-
-    free(res_msg);
-    exit(EXIT_SUCCESS);
+    if (strcmp(plId,"") == 0){
+        exit(EXIT_SUCCESS);
+    }
+    
+    quit(1);
 }
 
 
@@ -307,7 +315,7 @@ int main(int argc, char *argv[]){
             scoreboard(arguments);
         }
         else if (strcmp(input,"quit\n") == 0){
-            quit();
+            quit(0);
         }
         else if (strcmp(input,"exit\n") == 0){
             EXIT();
