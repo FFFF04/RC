@@ -91,31 +91,31 @@ void UDP(char* line, char* ip_address, char* port,char* msg){
     n = getaddrinfo(ip_address,port,&hints,&res);
     if(n != 0)/*error*/
         exit(EXIT_FAILURE); 
-    while (1) {
-      n=sendto(fd, line, strlen(line), 0, res->ai_addr, res->ai_addrlen);
-      if(n==-1)/*error*/
-          exit(EXIT_FAILURE);
-      
-      fd_set readfds;
-      struct timeval tv;
-      FD_ZERO(&readfds);
-      FD_SET(fd, &readfds);
-      tv.tv_sec = 3;
-      tv.tv_usec = 0;
-      int ret = select(fd + 1, &readfds, NULL, NULL, &tv);
-      if (ret < 0) {
-        fprintf(stderr, "Error in Select\n");
+    n=sendto(fd, line, strlen(line), 0, res->ai_addr, res->ai_addrlen);
+    if(n==-1)/*error*/
         exit(EXIT_FAILURE);
-      }
-      else {
-        addrlen=sizeof(addr);
-        n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
-        if(n == -1)/*error*/
-            exit(EXIT_FAILURE);
-        break;
-      }
-    }
+    
+    addrlen=sizeof(addr);
+    n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
+    if(n == -1)/*error*/
+        exit(EXIT_FAILURE);
+
     freeaddrinfo(res);
     close(fd);
     return ;
 }
+
+/*
+
+while(n < Max_Resend){
+  sendto()
+
+  int ret = recvfrom();
+
+  if(ret < 0){
+    if(errno == EWOULDBLOCK || errno == E_AGAIN)
+      //timeout -> resend
+  }
+}
+
+*/
