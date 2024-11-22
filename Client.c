@@ -25,10 +25,10 @@ void start(char* arguments){ //UDP protocol
     the game (it cannot exceed 600 seconds).
     The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
     that it can start playing. The Player application displays this information. */
-    
     char* res_msg = (char*) calloc(8,1);
     char *protocol;
-    char msg[17];  
+    char msg[17];
+
     snprintf(msg, sizeof(msg), "SNG %s", arguments);
     UDP(msg,ip_address,port,res_msg);
 
@@ -36,18 +36,16 @@ void start(char* arguments){ //UDP protocol
     protocol = strtok(NULL, "");
 
     if (strcmp(protocol,"ERR\n") == 0)
-        fprintf(stderr, "Incorrect Arguments in fuction 'start'\n");
+        fprintf(stdout, "Incorrect Arguments in fuction 'start'\n");
     else if (strcmp(protocol,"NOK\n") == 0)
-        fprintf(stderr, "Game already Created\n");
+        fprintf(stdout, "Game already Created\n");
     else{
         fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
         for(int i = 0; i < 6; i++){
             plId[i] = arguments[i];
         }
     }
-    
     free(res_msg);
-    //temos de criar file e dar erro se ja existir jogo nao acabado
 }
 
 
@@ -66,27 +64,20 @@ void try(char* arguments){ //UDP protocol
     been correctly guessed and the player wins the game. The Player application
     displays the received information.*/
 
-    if (strcmp(plId,"") == 0){ //Isto provavelmente n funciona pq não iniciamos a vazio
-        fprintf(stderr, "No Game Started yet!!!!\n");
-        return;
-    }
     char* res_msg = (char*) calloc(22,1);
     char msg[22];
     char *protocol;
     char *result;
     
-    
     snprintf(msg, sizeof(msg), "TRY %s %s %d\n", plId, strtok(arguments,"\n"), nT);
-
-    printf("%s",msg);
-
     UDP(msg,ip_address,port,res_msg);
-
+    
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
-    result = strtok(NULL, "");
-    
-    if (strcmp(protocol,"OK") == 0);
+
+    if (strcmp(protocol,"OK") == 0){
+
+        result = strtok(NULL, "");
         // ver o que fazer com o result
         /*
         Pode acontecer 2 casos:
@@ -95,30 +86,31 @@ void try(char* arguments){ //UDP protocol
         ou
             OK, NOT WON YET. TRY AGAIN! 
         */
-
-    else if (strcmp(protocol,"DUP") == 0){
-        fprintf(stderr, "Repeated guess. Try again!\n");
+    }
+    else if (strcmp(protocol,"DUP\n") == 0){
+        fprintf(stdout, "Repeated guess. Try again!\n");
         nT--; 
     }
     else if (strcmp(protocol,"INV") == 0){
         //nao tenho a certeza deste
     }
-    else if (strcmp(protocol,"NOK") == 0){
-        fprintf(stderr, "Player %s does not have an ongoing game.\n", plId); //acho que pode haver mais casos
+    else if (strcmp(protocol,"NOK\n") == 0){
+        fprintf(stdout, "Player does not have an ongoing game.\n"); //acho que pode haver mais casos
     }
     else if (strcmp(protocol,"ENT") == 0){
-        fprintf(stderr, "No more attempts available.\n"); //revelar chave vencedora
+        fprintf(stdout, "No more attempts available.\n");
+        result = strtok(NULL, "");
+        printf("Solution: %s",result);
     }
     else if (strcmp(protocol,"ETM") == 0){
-        fprintf(stderr, "Time ended.\n"); //revelar chave vencedora
+        fprintf(stdout, "Time ended.\n");
+        result = strtok(NULL, "");
+        printf("Solution: %s",result);
     }
-    else if (strcmp(protocol,"ERR") == 0){
-        fprintf(stderr, "Incorrect Arguments in fuction 'try'\n"); //acho que dá para escrever este erro de maneira mais "normal"
+    else if (strcmp(protocol,"ERR\n") == 0){
+        fprintf(stdout, "Incorrect Arguments in fuction 'try'\n"); //acho que dá para escrever este erro de maneira mais "normal"
     }
     
-    
-
-
     nT++;
     free(res_msg);
 }
@@ -136,7 +128,7 @@ void show_trials(char *arguments){ //TCP session
     */
 
     if (strcmp(plId,"") == 0){
-        fprintf(stderr, "No Game Started yet!!!!\n");
+        fprintf(stdout, "No Game Started yet!!!!\n");
         return;
     }
 
@@ -154,7 +146,7 @@ void scoreboard(char *arguments){ //TCP session
     a numbered list.*/
 
     if (strcmp(plId,"") == 0){
-        fprintf(stderr, "No Game Started yet!!!!\n");
+        fprintf(stdout, "No Game Started yet!!!!\n");
         return;
     }
 }
@@ -166,38 +158,33 @@ void quit(int exit_status){ //UDP protocol
     under way, the GS server should be informed, by sending a message using the
     UDP protocol.*/
 
-    char* res_msg = (char*) calloc(22,1);
+    char* res_msg = (char*) calloc(15,1);
     char *protocol, *result;
-    char msg[22];
+    char msg[12];
 
     snprintf(msg, sizeof(msg), "QUT %s\n", plId);
-    //UDP(msg,ip_address,port,res_msg);
-    //FALTA Analise do RES_MSG
+    UDP(msg,ip_address,port,res_msg);
 
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
-    result = strtok(NULL, "");
-
-    if (strcmp(protocol,"OK") == 0)
-        //revelar secret key
-        printf("Solution: %s\n",result);
-
-    else if (strcmp(protocol, "NOK") == 0){
-        fprintf(stderr, "No have an ongoing game.\n"); //acho que pode haver mais casos
-        exit_status = 0;
-    }
-
-    else if(strcmp(protocol, "ERR") == 0){
-        fprintf(stderr, "Error while quitting the game.\n");
-        exit_status = 0;
-    }
     
+    if (strcmp(protocol,"OK") == 0){
+        result = strtok(NULL, "");
+        printf("Solution: %s",result);
+    }
+    else if (strcmp(protocol, "NOK\n") == 0){
+        fprintf(stdout, "No have an ongoing game.\n");
+        exit_status = 0;
+    }
+    else if(strcmp(protocol, "ERR\n") == 0){
+        fprintf(stdout, "Error while quitting the game.\n");
+        exit_status = 0;
+    }
     
     free(res_msg);
     memset(plId,0,sizeof(plId));
     if(exit_status == 1)
         exit(EXIT_SUCCESS);
-
 }
 
 
@@ -210,7 +197,6 @@ void EXIT(){ //UDP protocol
     if (strcmp(plId,"") == 0){
         exit(EXIT_SUCCESS);
     }
-    
     quit(1);
 }
 
@@ -237,18 +223,17 @@ void debug(char *arguments){ //UDP protocol
     
     char* res_msg = (char*) calloc(8,1);
     char *protocol;
-    char msg[23];  
+    char msg[24];  
     snprintf(msg, sizeof(msg), "DBG %s", arguments);
-    printf("%s",msg);
-    //UDP(msg,ip_address,port,res_msg);
+    UDP(msg,ip_address,port,res_msg);
 
     strtok(res_msg," ");
     protocol = strtok(NULL, "");
 
     if (strcmp(protocol,"ERR\n") == 0)
-        fprintf(stderr, "Incorrect Arguments in fuction 'start'\n");
+        fprintf(stdout, "Incorrect Arguments in fuction 'start'\n");
     else if (strcmp(protocol,"NOK\n") == 0)
-        fprintf(stderr, "Game already Created\n");
+        fprintf(stdout, "Game already Created\n");
     else{
         fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
         for(int i = 0; i < 6; i++){
@@ -299,7 +284,6 @@ int main(int argc, char *argv[]){
         fgets(input, sizeof(input), stdin);
 
         strtok(input," ");
-        
         arguments = strtok(NULL, "");
 
         if (strcmp(input,"start") == 0){
@@ -323,9 +307,8 @@ int main(int argc, char *argv[]){
         else if (strcmp(input,"debug") == 0){
             debug(arguments);
         }
-        // .......... Faltam if acho eu
         else
-            fprintf(stderr, "Incorrect Command\n");
+            fprintf(stdout, "Incorrect Command\n");
         
         memset(input, 0, strlen(input));
     }

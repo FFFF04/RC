@@ -80,31 +80,29 @@ void UDP(char* line, char* ip_address, char* port,char* msg){
     if(sigaction(SIGPIPE,&act,NULL) == -1)/*error*/
         exit(EXIT_FAILURE);
 
-    fd = socket(AF_INET,SOCK_DGRAM,0);//TCP socket
-    if(fd == -1)
-        exit(EXIT_FAILURE);//error
+    fd = socket(AF_INET,SOCK_DGRAM,0);//UCP socket
+    if (fd == -1)
+        exit(EXIT_FAILURE); //error
 
     memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET;//IPv4
-    hints.ai_socktype=SOCK_DGRAM;//UDP socket
+    hints.ai_family=AF_INET; //IPv4
+    hints.ai_socktype=SOCK_DGRAM; //UDP socket
    
     n = getaddrinfo(ip_address,port,&hints,&res);
-    if(n != 0)/*error*/
+    if (n != 0)/*error*/
         exit(EXIT_FAILURE); 
+    
     n=sendto(fd, line, strlen(line), 0, res->ai_addr, res->ai_addrlen);
-    if(n==-1)/*error*/
+    if (n==-1)/*error*/
         exit(EXIT_FAILURE);
     
+    freeaddrinfo(res);
     addrlen=sizeof(addr);
     n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
     if(n == -1)/*error*/
         exit(EXIT_FAILURE);
-
-    freeaddrinfo(res);
     close(fd);
-    return ;
 }
-
 /*
 
 while(n < Max_Resend){
