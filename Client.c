@@ -33,8 +33,7 @@ void start(char* arguments){ //UDP protocol
     UDP(msg,ip_address,port,res_msg);
 
     strtok(res_msg," ");
-    protocol = strtok(NULL, ""); //se metermos aqui o \n se calhar ja nao é preciso estar na comparação em baixo?
-
+    protocol = strtok(NULL, "");
 
     if (strcmp(protocol,"ERR\n") == 0)
         fprintf(stderr, "Incorrect Arguments in fuction 'start'\n");
@@ -220,6 +219,38 @@ void debug(char *arguments){ //UDP protocol
     provided in the message. The Player application is informed that it can start
     playing.*/
     
+    /* following this command the Player application sends a 
+    message to the GS, using the UDP protocol, asking to start a
+    new game, provides the player identification PLID and indicates the
+    max_playtime value, in seconds, in which the player proposes to complete
+    the game (it cannot exceed 600 seconds).
+    The GS randomly selects a 4 colour key: C1 C2 C3 C4 and informs the player
+    that it can start playing. The Player application displays this information. */
+    
+    char* res_msg = (char*) calloc(8,1);
+    char *protocol;
+    char msg[23];  
+    snprintf(msg, sizeof(msg), "DBG %s", arguments);
+    printf("%s",msg);
+    //UDP(msg,ip_address,port,res_msg);
+
+    strtok(res_msg," ");
+    protocol = strtok(NULL, "");
+
+    if (strcmp(protocol,"ERR\n") == 0)
+        fprintf(stderr, "Incorrect Arguments in fuction 'start'\n");
+    else if (strcmp(protocol,"NOK\n") == 0)
+        fprintf(stderr, "Game already Created\n");
+    else{
+        fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
+        for(int i = 0; i < 6; i++){
+            plId[i] = arguments[i];
+        }
+    }
+    
+    free(res_msg);
+
+
 }
 
 
