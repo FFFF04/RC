@@ -37,8 +37,12 @@ void start(char* arguments){ //UDP protocol
 
     if (strcmp(protocol,"ERR\n") == 0)
         fprintf(stdout, "Incorrect Arguments in fuction 'start'\n");
-    else if (strcmp(protocol,"NOK\n") == 0)
+    else if (strcmp(protocol,"NOK\n") == 0){
         fprintf(stdout, "Game already Created\n");
+        for(int i = 0; i < 6; i++){
+            plId[i] = arguments[i];
+        }
+    }
     else{
         fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
         for(int i = 0; i < 6; i++){
@@ -67,7 +71,6 @@ void try(char* arguments){ //UDP protocol
     char* res_msg = (char*) calloc(22,1);
     char msg[22];
     char *protocol;
-    char *result;
     
     snprintf(msg, sizeof(msg), "TRY %s %s %d\n", plId, strtok(arguments,"\n"), nT);
     UDP(msg,ip_address,port,res_msg);
@@ -76,19 +79,26 @@ void try(char* arguments){ //UDP protocol
     protocol = strtok(NULL, " ");
 
     if (strcmp(protocol,"OK") == 0){
+        char *endptr;
+        int new_nt, nB, nW;
 
-        result = strtok(NULL, "");
-        // ver o que fazer com o result
-        /*
-        Pode acontecer 2 casos:
-            OK, YOU WON!!! se nB = 4 ou nT = -1
-            Mas tipo como é que é igual ao anterior se for igual ao anterior e o anterior foi OK
-        ou
-            OK, NOT WON YET. TRY AGAIN! 
-        */
+        new_nt = strtol(strtok(NULL, " "), &endptr, 10);
+        nB = strtol(strtok(NULL, " "), &endptr, 10);
+        nW = strtol(strtok(NULL, ""), &endptr, 10);
 
-        // memset(plId,0,sizeof(plId));
-        // nT = 0;
+        if (new_nt == -1){ 
+            // Foi um resent pois o server nao conseguio enviar a 
+            // mensagem e tentamos outra vez enviar pelo terminal a mesma mensagem
+            nT--;
+        }
+        //Imprimimos sempre mesmo que ganhemos acho que fica bem :)
+        fprintf(stdout, "Guess result: nB(colour and position correct): %d, nW(colour correct): %d, Num of Tries left: %d\n",nB,nW, 7 - nT);
+        if(nB == 4){
+            fprintf(stdout, "YOU WON. Guesses needed: %d. GOOD JOB!!!!\n",nT);
+            memset(plId,0,sizeof(plId));
+            nT = 0;
+        }
+
     }
     else if (strcmp(protocol,"DUP\n") == 0){
         fprintf(stdout, "Repeated guess. Try again!\n");
@@ -101,16 +111,14 @@ void try(char* arguments){ //UDP protocol
         fprintf(stdout, "Player does not have an ongoing game.\n"); //acho que pode haver mais casos
     }
     else if (strcmp(protocol,"ENT") == 0){
-        fprintf(stdout, "No more attempts available.\n");
-        result = strtok(NULL, "");
-        printf("Solution: %sBetter luck next time.\n",result);
+        fprintf(stdout, "YOU LOST!! No more attempts available.\n");
+        printf("Solution: %sBetter luck next time.\n", strtok(NULL, ""));
         memset(plId,0,sizeof(plId));
         nT = 0;
     }
     else if (strcmp(protocol,"ETM") == 0){
-        fprintf(stdout, "Time ended.\n");
-        result = strtok(NULL, "");
-        printf("Solution: %sBetter luck next time.\n",result);
+        fprintf(stdout, "YOU LOST!! Time ended.\n");
+        printf("Solution: %sBetter luck next time.\n", strtok(NULL, ""));
         memset(plId,0,sizeof(plId));
         nT = 0;
     }
@@ -301,10 +309,10 @@ int main(int argc, char *argv[]){
         else if (strcmp(input,"try") == 0){
             try(arguments);
         }
-        else if (strcmp(input,"show_trials") == 0 || strcmp(input,"st") == 0){
+        else if (strcmp(input,"show_trials\n") == 0 || strcmp(input,"st\n") == 0){
             show_trials(arguments);
         }
-        else if (strcmp(input,"scoreboard") == 0 || strcmp(input,"sb") == 0){
+        else if (strcmp(input,"scoreboard\n") == 0 || strcmp(input,"sb\n") == 0){
             scoreboard(arguments);
         }
         else if (strcmp(input,"quit\n") == 0){

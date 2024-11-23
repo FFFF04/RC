@@ -67,7 +67,8 @@ void read_msg(char *prod_consumidor, int file, size_t size) {
 }
 
 
-void UDP(char* line, char* ip_address, char* port,char* msg){
+void UDP(char* line, char* ip_address, char* port,char* msg){ 
+  // PERGUNTAR PROF SE OS ERROS É PARA SAIR OU DAR MENSAGEM DE AVISO
     struct addrinfo hints,*res;
     int fd,n;
     struct sigaction act;
@@ -102,7 +103,13 @@ void UDP(char* line, char* ip_address, char* port,char* msg){
         exit(EXIT_FAILURE);
     close(fd);
 }
+
+
+
 /*
+
+setsockopt(); 5 a 10 seg 
+
 
 while(n < Max_Resend){
   sendto()
