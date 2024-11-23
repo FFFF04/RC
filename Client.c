@@ -1,4 +1,4 @@
-//#include "Client.h"
+#include "Client.h"
 #include "extra.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +54,7 @@ void start(char* arguments){ //UDP protocol
 
 
 
-void try(char* arguments){ //UDP protocol
+void TRY(char* arguments){ //UDP protocol
     /* red (R), green (G), blue (B), yellow (Y), orange (O) and purple (P)*/
 
     /*the Player application sends a message to the GS,
@@ -98,17 +98,18 @@ void try(char* arguments){ //UDP protocol
             memset(plId,0,sizeof(plId));
             nT = 0;
         }
-
     }
     else if (strcmp(protocol,"DUP\n") == 0){
         fprintf(stdout, "Repeated guess. Try again!\n");
         nT--; 
     }
-    else if (strcmp(protocol,"INV") == 0){
-        //nao tenho a certeza deste
+    else if (strcmp(protocol,"INV") == 0){ // Acho que é so escrever mensagem.
+        // Escrever tipo problemas a enviar para o servidor por favor reenviar o try anterio assim uma cena
+        nT--;
     }
     else if (strcmp(protocol,"NOK\n") == 0){
-        fprintf(stdout, "Player does not have an ongoing game.\n"); //acho que pode haver mais casos
+        fprintf(stdout, "Player does not have an ongoing game.\n");
+        nT--;
     }
     else if (strcmp(protocol,"ENT") == 0){
         fprintf(stdout, "YOU LOST!! No more attempts available.\n");
@@ -124,6 +125,7 @@ void try(char* arguments){ //UDP protocol
     }
     else if (strcmp(protocol,"ERR\n") == 0){
         fprintf(stdout, "Incorrect Arguments in fuction 'try'\n"); //acho que dá para escrever este erro de maneira mais "normal"
+        nT--;
     }
     
     nT++;
@@ -307,7 +309,7 @@ int main(int argc, char *argv[]){
             start(arguments);
         }
         else if (strcmp(input,"try") == 0){
-            try(arguments);
+            TRY(arguments);
         }
         else if (strcmp(input,"show_trials\n") == 0 || strcmp(input,"st\n") == 0){
             show_trials(arguments);
