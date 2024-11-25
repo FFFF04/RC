@@ -7,6 +7,7 @@
 #include <stddef.h>
 
 
+
 char *port, *ip_address;
 char plId[6];
 int nT = 1;
@@ -54,17 +55,6 @@ void start(char* arguments){ //UDP protocol
 void TRY(char* arguments){ //UDP protocol
     /* red (R), green (G), blue (B), yellow (Y), orange (O) and purple (P)*/
 
-    /*the Player application sends a message to the GS,
-    using the UDP protocol, asks to check if C1 C2 C3 C4 is the secret key to be
-    guessed. If the maximum number of trials has been exceeded the player loses the
-    game, otherwise the number of trials is increased. If the maximum playtime
-    (max_playtime) has been reached the player loses the game.
-    Otherwise, the GS replies informing the number of Ci guesses that are correct in
-    both colour and position (nB), and the number of Ci guesses that belong to the
-    secret key but are incorrectly positioned (nW). If nB = 4 the secret code has
-    been correctly guessed and the player wins the game. The Player application
-    displays the received information.*/
-
     char* res_msg = (char*) calloc(22,1);
     char msg[22];
     char *protocol;
@@ -89,7 +79,7 @@ void TRY(char* arguments){ //UDP protocol
             nT--;
         }
         //Imprimimos sempre mesmo que ganhemos acho que fica bem :)
-        fprintf(stdout, "Guess result: nB(colour and position correct): %d, nW(colour correct): %d, Num of Tries left: %d\n",nB,nW, 7 - nT);
+        fprintf(stdout, "Guess result: nB: %d, nW: %d, Num of Tries left: %d\n",nB,nW, 8 - nT);
         if(nB == 4)
             fprintf(stdout, "YOU WON. Guesses needed: %d. GOOD JOB!!!!\n",nT);
     }
@@ -124,7 +114,7 @@ void TRY(char* arguments){ //UDP protocol
 
 
 
-void show_trials(char *arguments){ //TCP session
+void show_trials(){ //TCP session
     /*following this command the Player establishes a
     TCP session with the GS and sends a message asking to receive a list of
     previously made trials and the respective results. In reply, the GS sends a text
@@ -134,17 +124,44 @@ void show_trials(char *arguments){ //TCP session
     application.
     */
 
-    if (strcmp(plId,"") == 0){
-        fprintf(stdout, "No Game Started yet!!!!\n");
-        return;
-    }
-    printf("%s",arguments);
+    char* res_msg = (char*) calloc(300,1);
+    char msg[11];
+    char *protocol;
+    
+    snprintf(msg, sizeof(msg), "STR %s\n", plId);
+    TCP(msg, ip_address, port, res_msg);
 
+    strtok(res_msg," ");
+    protocol = strtok(NULL, " ");
+
+    if (strcmp(protocol,"NOK\n") == 0){
+        fprintf(stdout, "No game started\n");
+    }
+    else{
+        char *fname, *fsize, *fdata;
+        fname = strtok(NULL, " ");
+        fsize = strtok(NULL, " ");
+        fdata = strtok(NULL, " ");
+
+        int fd = fopen(fname,"w");
+        ssize_t ret = write(fd, fdata, fsize);
+        if (ret < 0) {
+            fprintf(stderr, "Write failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        fprintf(stdout, "Current trials:\n%s", fdata);
+        close(fd);  
+    }
+        
+        
+
+    free(res_msg);
 }
 
 
 
-void scoreboard(char *arguments){ //TCP session
+void scoreboard(){ //TCP session
     /*following this command the Player establishes a TCP
     session with the GS and sends a message asking to receive an updated
     scoreboard. In reply, the GS sends a text file containing the top 10 scores
@@ -153,11 +170,28 @@ void scoreboard(char *arguments){ //TCP session
     secret key. After receiving the reply from the GS, the scoreboard is displayed as
     a numbered list.*/
 
-    if (strcmp(plId,"") == 0){
-        fprintf(stdout, "No Game Started yet!!!!\n");
+    char* res_msg = (char*) calloc(300,1);
+    char msg[4];
+    char *protocol;
+    
+    snprintf(msg, sizeof(msg), "SSB\n");
+
+    TCP(msg, ip_address, port, res_msg);
+
+    strtok(res_msg," ");
+    protocol = strtok(NULL, " ");
+
+    if (strcmp(protocol,"\n") == 0){
+        fprintf(stdout, "Incorrect Arguments in fuction 'start'\n");
+        free(res_msg);
         return;
     }
-    printf("%s",arguments);
+    else if (strcmp(protocol,"\n") == 0)
+        fprintf(stdout, "Game already Created\n");
+    else
+        fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
+
+    free(res_msg);
 }
 
 
@@ -171,6 +205,7 @@ void quit(int exit_status){ //UDP protocol
     char *protocol, *result;
     char msg[12];
     
+    // FAZER UM IF PARA SE FOR NULO
     snprintf(msg, sizeof(msg), "QUT %s\n", plId);
     UDP(msg,ip_address,port,res_msg);
     
@@ -307,10 +342,10 @@ int main(int argc, char *argv[]){
             TRY(arguments);
         }
         else if (strcmp(input,"show_trials\n") == 0 || strcmp(input,"st\n") == 0){
-            show_trials(arguments);
+            show_trials();
         }
         else if (strcmp(input,"scoreboard\n") == 0 || strcmp(input,"sb\n") == 0){
-            scoreboard(arguments);
+            scoreboard();
         }
         else if (strcmp(input,"quit\n") == 0){
             quit(0);

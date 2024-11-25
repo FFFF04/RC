@@ -106,6 +106,41 @@ void UDP(char* line, char* ip_address, char* port,char* msg){
 
 
 
+void TCP(char* line, char* ip_address, char* port,char* msg){
+    struct addrinfo hints,*res;
+    int fd,n;
+    ssize_t nbytes,nleft,nwritten,nread;
+    struct sigaction act;
+    char *ptr,buffer[128];
+    
+    memset(&act,0,sizeof act);
+    act.sa_handler = SIG_IGN;
+    if(sigaction(SIGPIPE,&act,NULL) == -1)/*error*/
+        exit(1);
+
+    fd = socket(AF_INET,SOCK_STREAM,0);//TCP socket
+
+    if(fd == -1)
+        exit(1);//error
+
+    memset(&hints,0,sizeof hints);
+    hints.ai_family = AF_INET;//IPv4
+    hints.ai_socktype = SOCK_STREAM;//TCP socket
+
+    n = getaddrinfo(ip_address,port,&hints,&res);
+    if(n != 0)/*error*/
+        exit(1);
+
+    n = connect(fd,res->ai_addr,res->ai_addrlen);
+    if(n == -1)/*error*/
+        exit(1);
+
+    send_msg(fd, line);
+
+    read_msg(fd, line);
+
+    close(fd);
+}
 /*
 
 setsockopt(); 5 a 10 seg 
