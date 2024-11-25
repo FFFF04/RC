@@ -56,7 +56,7 @@ char* start(char* arguments){
         return "RSG ERR\n";
     
     //CRIAR FILE com PLID que vai ser o nome mas com o que a frente?
-    // fptr = fopen(strcat(PLID,".txt"), "w"); // QUAL É O NOME QUE É SUPOSTO DARMOS A ESTA PORRA???? 
+    // fptr = fopen(strcat(PLID,".txt"), "w");
     // if (fptr == NULL) { 
     //     fprintf(stderr, "Could not open file\n");
     //     exit(EXIT_FAILURE);

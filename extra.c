@@ -106,12 +106,11 @@ void UDP(char* line, char* ip_address, char* port,char* msg){
 
 
 
-void TCP(char* line, char* ip_address, char* port,char* msg){
+void TCP(char* line, char* ip_address, char* port, char* msg){
     struct addrinfo hints,*res;
     int fd,n;
-    ssize_t nbytes,nleft,nwritten,nread;
     struct sigaction act;
-    char *ptr,buffer[128];
+    ssize_t nbytes,nleft,nwritten,nread;
     
     memset(&act,0,sizeof act);
     act.sa_handler = SIG_IGN;
@@ -135,10 +134,28 @@ void TCP(char* line, char* ip_address, char* port,char* msg){
     if(n == -1)/*error*/
         exit(1);
 
-    send_msg(fd, line);
+    nbytes=strlen(line);
+    nleft=nbytes;
 
-    read_msg(fd, line);
+    while(nleft>0){
+        nwritten=write(fd,line,nleft);
+        if(nwritten<=0)/*error*/
+            exit(1);
+        nleft-=nwritten;
+        line+=nwritten;
+    }
 
+    nleft = 500;
+    while(1){
+        nread = read(fd, msg, nleft);
+        
+        if(nread==-1)/*error*/
+            exit(1);
+        else if(nread==0)
+            break;//closed by peer
+        nleft-=nread;
+        msg+=nread;
+    }
     close(fd);
 }
 /*
