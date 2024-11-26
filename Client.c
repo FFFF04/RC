@@ -110,7 +110,7 @@ void TRY(char* arguments){ //UDP protocol
 
 void show_trials(){ //TCP session
 
-    char* res_msg = (char*) calloc(500,1);
+    char* res_msg = (char*) calloc(1000,1);
     char msg[12];
     char *protocol, *endptr;
 
@@ -148,9 +148,9 @@ void show_trials(){ //TCP session
 
 void scoreboard(){ //TCP session
 
-    char* res_msg = (char*) calloc(300,1);
+    char* res_msg = (char*) calloc(1000,1);
     char msg[5];
-    char *protocol;
+    char *protocol, *endptr;
     
     snprintf(msg, sizeof(msg), "SSB\n");
 
@@ -159,16 +159,27 @@ void scoreboard(){ //TCP session
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
 
-    if (strcmp(protocol,"\n") == 0){
-        fprintf(stdout, "Incorrect Arguments in fuction 'start'\n");
-        free(res_msg);
-        return;
+    if (strcmp(protocol,"EMPTY\n") == 0){
+        fprintf(stdout, "No game have been finished\n");
     }
-    else if (strcmp(protocol,"\n") == 0)
-        fprintf(stdout, "Game already Created\n");
-    else
-        fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
+    else{
+        char *fname, *fsize, *fdata;
 
+        fname = strtok(NULL, " ");
+        fsize = strtok(NULL, " ");
+        fdata = strtok(NULL, "");
+
+        FILE* fd = fopen(fname,"w");
+
+        ssize_t ret = fwrite(fdata, sizeof(char), strtol(fsize, &endptr, 10), fd);
+        if (ret < 0) {
+            fprintf(stderr, "Write failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        fprintf(stdout, "%s", fdata);
+        fclose(fd);  
+    }
     free(res_msg);
 }
 
@@ -180,10 +191,12 @@ void quit(int exit_status){ //UDP protocol
     char *protocol, *result;
     char msg[12];
     
-    if (strcmp(plId,"") == 0)
-        snprintf(msg, sizeof(msg), "QUT       \n");
-    else
-        snprintf(msg, sizeof(msg), "QUT %s\n",plId);
+    if (strcmp(plId,"") == 0){
+        fprintf(stdout, "There is no ongoing game.\n");
+        return;
+    }
+
+    snprintf(msg, sizeof(msg), "QUT %s\n",plId);
     
     UDP(msg,ip_address,port,res_msg);
     

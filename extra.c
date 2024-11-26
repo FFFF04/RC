@@ -145,7 +145,7 @@ void TCP(char* line, char* ip_address, char* port, char* msg){
         line+=nwritten;
     }
 
-    nleft = 500;
+    nleft = 1000;
     while(1){
         nread = read(fd, msg, nleft);
         
