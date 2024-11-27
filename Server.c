@@ -16,7 +16,7 @@ int verbose_mode = 0; // 0 desativado; 1 ativado
 int game_started = 0; // 0 nao ha nenhum; fd há jogo e é esse o file
 FILE *fptr;
 char colors[6] = {'R', 'G', 'B', 'Y', 'O', 'P'};
-int clock_my = 0; 
+long int clock_my = 0; 
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
