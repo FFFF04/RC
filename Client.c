@@ -23,7 +23,11 @@ void start(char* arguments){ //UDP protocol
     nT = 1;
 
     snprintf(msg, sizeof(msg), "SNG %s", arguments);
-    UDP(msg,ip_address,port,res_msg);
+    
+    if (UDP(msg,ip_address,port,res_msg) == 1){
+        free(res_msg);
+        return;
+    }
 
     strtok(res_msg," ");
     protocol = strtok(NULL, "");
@@ -55,6 +59,12 @@ void TRY(char* arguments){ //UDP protocol
     
     snprintf(msg, sizeof(msg), "TRY %s %s %d\n", plId, strtok(arguments,"\n"), nT);
     UDP(msg,ip_address,port,res_msg);
+    
+    if (UDP(msg,ip_address,port,res_msg) == 1){
+        free(res_msg);
+        return;
+    }
+    
     
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
@@ -198,7 +208,10 @@ void quit(int exit_status){ //UDP protocol
 
     snprintf(msg, sizeof(msg), "QUT %s\n",plId);
     
-    UDP(msg,ip_address,port,res_msg);
+    if (UDP(msg,ip_address,port,res_msg) == 1){
+        free(res_msg);
+        return;
+    }
     
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
@@ -245,7 +258,11 @@ void debug(char *arguments){ //UDP protocol
     nT = 1;
 
     snprintf(msg, sizeof(msg), "DBG %s", arguments);
-    UDP(msg,ip_address,port,res_msg);
+    
+    if (UDP(msg,ip_address,port,res_msg) == 1){
+        free(res_msg);
+        return;
+    }
 
     strtok(res_msg," ");
     protocol = strtok(NULL, "");

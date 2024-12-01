@@ -36,7 +36,7 @@ char* getIPaddress()
     return ip_address;
 }
 
-void UDP(char* line, char* ip_address, char* port, char* msg) {
+int UDP(char* line, char* ip_address, char* port, char* msg) {
     struct addrinfo hints, *res;
     int fd, n;
     struct sigaction act;
@@ -90,8 +90,11 @@ void UDP(char* line, char* ip_address, char* port, char* msg) {
     addrlen = sizeof(addr);
     n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
     if (n == -1) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        if (errno == EAGAIN || errno == EWOULDBLOCK){
             printf("No response received from the server, please recent the same command\n");
+            /*FALTA ENVIAR UM RETURN 1 QUE TEMOS DE Reenviar mensagem*/
+            return 1;
+        }
         else{ 
             perror("recvfrom failed");
             close(fd);
@@ -99,6 +102,7 @@ void UDP(char* line, char* ip_address, char* port, char* msg) {
         }
     }
     close(fd);
+    return 0;
 }
 
 
