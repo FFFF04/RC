@@ -89,7 +89,7 @@ int main(int argc, char *argv[]){
     int fd_tcp, fd_udp, errcode, select_fds;
     
     fd_set inputs, testfds;
-    enum {idle,busy} state;
+    //enum {idle,busy} state;
     char buffer[128];
 
     if (argc <= 0 || argc > 4){
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]){
     fd_tcp=socket(AF_INET,SOCK_STREAM,0);//TCP socket
     if(fd_tcp==-1)
         exit(1);//error
-    memset(&hints,0,sizeof hints_tcp);
+    memset(&hints_tcp,0,sizeof hints_tcp);
     hints_tcp.ai_family=AF_INET;//IPv4
     hints_tcp.ai_socktype=SOCK_STREAM;//TCP socket
     hints_tcp.ai_flags = AI_PASSIVE;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]){
                 if(FD_ISSET(fd_udp,&testfds)){
 
                     addrlen=sizeof(addr);
-                    if(recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
+                    if(recvfrom(fd_udp,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
                         exit(EXIT_FAILURE);
                     
                     command = strtok(buffer, " ");
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]){
             
                     if (strcmp(command,"SNG") == 0){
                         char* res_msg = start(arguments);
-                        if(sendto(fd, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
+                        if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
                             exit(EXIT_FAILURE);
                     }
                     else if (strcmp(command,"try") == 0){
@@ -203,32 +203,14 @@ int main(int argc, char *argv[]){
                     else if (strcmp(command,"DBG") == 0){
                     }
                     memset(buffer, 0, sizeof(buffer));
-                            }
-                    }
+                }
+        }
     }
-    while (1){
-        addrlen=sizeof(addr);
-        if(recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
-            exit(EXIT_FAILURE);
-        
-        command = strtok(buffer, " ");
-        arguments = strtok(NULL, "");
- 
-        if (strcmp(command,"SNG") == 0){
-            char* res_msg = start(arguments);
-            if(sendto(fd, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
-                exit(EXIT_FAILURE);
-        }
-        else if (strcmp(command,"try") == 0){
-            
-        }
-        else if (strcmp(command,"QUT") == 0){
-        }
-        else if (strcmp(command,"DBG") == 0){
-        }
-        memset(buffer, 0, sizeof(buffer));
-    }
-    freeaddrinfo(res);
+    
+    freeaddrinfo(res_tcp);
+    freeaddrinfo(res_udp);
+    close(fd_udp);
+    close(fd_tcp);
 
     exit(EXIT_SUCCESS);
 }
