@@ -147,30 +147,31 @@ int main(int argc, char *argv[]){
     //PARA TCP
     fd_tcp=socket(AF_INET,SOCK_STREAM,0);//TCP socket
     if(fd_tcp==-1)
-        exit(1);//error
+        exit(EXIT_FAILURE);
     memset(&hints_tcp,0,sizeof hints_tcp);
     hints_tcp.ai_family=AF_INET;//IPv4
     hints_tcp.ai_socktype=SOCK_STREAM;//TCP socket
     hints_tcp.ai_flags = AI_PASSIVE;
     errcode=getaddrinfo(NULL, port, &hints_tcp, &res_tcp);
-    if(errcode!=0)/*error*/
-        exit(1);
-    if(bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen)==-1)/*error*/{
+    if(errcode != 0)/*error*/
+        exit(EXIT_FAILURE);
+    if(bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1)/*error*/{
         perror("bind");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
-        
-    if(listen(fd_tcp,5)==-1)/*error*/
-        exit(1);
+    
+    //QUANTOS CLIENTES PODEM IR AO MESMO TEMPO????
+    if(listen(fd_tcp,5) == -1)/*error*/ 
+        exit(EXIT_FAILURE);
 
     FD_ZERO(&inputs); // Clear input mask
     FD_SET(fd_udp,&inputs); // Set UDP channel on
     FD_SET(fd_tcp,&inputs); // Set TCP channel on
 
     while(1){
-        testfds=inputs; // Reload mask
+        testfds = inputs; // Reload mask
 
-        select_fds=select(FD_SETSIZE,&testfds,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) NULL);
+        select_fds = select(FD_SETSIZE,&testfds,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) NULL);
 
         switch(select_fds)
         {

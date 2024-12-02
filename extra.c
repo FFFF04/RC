@@ -84,7 +84,9 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
 
         if (tries == MAX_TRIES){
             printf("No response received from the server, please recent the same command\n");
-            break;    
+            freeaddrinfo(res);
+            close(fd);
+            return 1;
         }
         
         n = sendto(fd, line, strlen(line), 0, res->ai_addr, res->ai_addrlen);
@@ -108,12 +110,12 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
                 exit(EXIT_FAILURE);
             }
         }
-        
+        break;
     }
 
     freeaddrinfo(res);
     close(fd);
-    return 1;
+    return 0;
 }
 
 
