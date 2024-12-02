@@ -12,6 +12,8 @@
 #include <ctype.h>
 #include <time.h>
 
+#define max(A,B) ((A)>=(B)?(A):(B))
+
 int verbose_mode = 0; // 0 desativado; 1 ativado
 int game_started = 0; // 0 nao ha nenhum; fd há jogo e é esse o file
 FILE *fptr;
@@ -80,12 +82,14 @@ char* start(char* arguments){
 
 int main(int argc, char *argv[]){
     char *port, *command, *arguments;
-    struct addrinfo hints,*res;
     struct sockaddr_in addr;
     socklen_t addrlen;
+    struct addrinfo hints_udp, hints_tcp,*res_tcp, *res_udp;
     struct sigaction act;
-    int fd, errcode;
-    ssize_t n;
+    int fd_tcp, fd_udp, errcode, select_fds;
+    
+    fd_set inputs, testfds;
+    enum {idle,busy} state;
     char buffer[128];
 
     if (argc <= 0 || argc > 4){
@@ -121,23 +125,87 @@ int main(int argc, char *argv[]){
 
 
     //PARA UDP
-    fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
-    if(fd == -1)/*error*/
+    fd_udp=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
+    if(fd_udp == -1)/*error*/
         exit(EXIT_FAILURE);
 
-    memset(&hints,0,sizeof hints);
-    hints.ai_family= AF_UNSPEC;//IPv4
-    hints.ai_socktype=SOCK_DGRAM;//UDP socket
-    hints.ai_flags = AI_PASSIVE;
+    memset(&hints_udp,0,sizeof hints_udp);
+    hints_udp.ai_family= AF_UNSPEC;//IPv4
+    hints_udp.ai_socktype=SOCK_DGRAM;//UDP socket
+    hints_udp.ai_flags = AI_PASSIVE;
 
-    errcode=getaddrinfo(NULL,port,&hints,&res);
+    errcode=getaddrinfo(NULL,port,&hints_udp,&res_udp);
     if(errcode != 0)/*error*/
         exit(EXIT_FAILURE);
     
-    n = bind(fd,res->ai_addr, res->ai_addrlen);
-    if(n == -1)/*error*/
+    if(bind(fd_udp,res_udp->ai_addr, res_udp->ai_addrlen) == -1)/*error*/
         exit(EXIT_FAILURE);
     
+
+
+
+    //PARA TCP
+    fd_tcp=socket(AF_INET,SOCK_STREAM,0);//TCP socket
+    if(fd_tcp==-1)
+        exit(1);//error
+    memset(&hints,0,sizeof hints_tcp);
+    hints_tcp.ai_family=AF_INET;//IPv4
+    hints_tcp.ai_socktype=SOCK_STREAM;//TCP socket
+    hints_tcp.ai_flags = AI_PASSIVE;
+    errcode=getaddrinfo(NULL, port, &hints_tcp, &res_tcp);
+    if(errcode!=0)/*error*/
+        exit(1);
+    if(bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen)==-1)/*error*/{
+        perror("bind");
+        exit(1);
+    }
+        
+    if(listen(fd_tcp,5)==-1)/*error*/
+        exit(1);
+
+    FD_ZERO(&inputs); // Clear input mask
+    FD_SET(fd_udp,&inputs); // Set UDP channel on
+    FD_SET(fd_tcp,&inputs); // Set TCP channel on
+
+    while(1){
+        testfds=inputs; // Reload mask
+
+        select_fds=select(FD_SETSIZE,&testfds,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) NULL);
+
+        switch(select_fds)
+        {
+            case -1:
+                perror("select");
+                exit(1);
+            default:
+                if(FD_ISSET(fd_tcp,&testfds)){
+                    
+                }
+                if(FD_ISSET(fd_udp,&testfds)){
+
+                    addrlen=sizeof(addr);
+                    if(recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
+                        exit(EXIT_FAILURE);
+                    
+                    command = strtok(buffer, " ");
+                    arguments = strtok(NULL, "");
+            
+                    if (strcmp(command,"SNG") == 0){
+                        char* res_msg = start(arguments);
+                        if(sendto(fd, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
+                            exit(EXIT_FAILURE);
+                    }
+                    else if (strcmp(command,"try") == 0){
+                        
+                    }
+                    else if (strcmp(command,"QUT") == 0){
+                    }
+                    else if (strcmp(command,"DBG") == 0){
+                    }
+                    memset(buffer, 0, sizeof(buffer));
+                            }
+                    }
+    }
     while (1){
         addrlen=sizeof(addr);
         if(recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
