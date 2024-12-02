@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <errno.h>
 
+#define MAX_TRIES 4 
+
 char* getIPaddress()
 {
     char *ip_address;
@@ -76,33 +78,42 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
         close(fd);
         exit(EXIT_FAILURE);
     }
-
-    n = sendto(fd, line, strlen(line), 0, res->ai_addr, res->ai_addrlen);
-    if (n == -1) {
-        perror("sendto failed");
-        freeaddrinfo(res);
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-
-    freeaddrinfo(res);
-
+    int tries = 0;
     addrlen = sizeof(addr);
-    n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
-    if (n == -1) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK){
+    while (1){
+
+        if (tries == MAX_TRIES){
             printf("No response received from the server, please recent the same command\n");
-            /*FALTA ENVIAR UM RETURN 1 QUE TEMOS DE Reenviar mensagem*/
-            return 1;
+            break;    
         }
-        else{ 
-            perror("recvfrom failed");
+        
+        n = sendto(fd, line, strlen(line), 0, res->ai_addr, res->ai_addrlen);
+        if (n == -1) {
+            perror("sendto failed");
+            freeaddrinfo(res);
             close(fd);
             exit(EXIT_FAILURE);
         }
+
+        n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
+        if (n == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK){
+                tries++;
+                printf("Failed to send message to the server, trying again\n");
+                continue;
+            }
+            else{ 
+                perror("recvfrom failed");
+                close(fd);
+                exit(EXIT_FAILURE);
+            }
+        }
+        
     }
+
+    freeaddrinfo(res);
     close(fd);
-    return 0;
+    return 1;
 }
 
 
