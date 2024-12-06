@@ -5,20 +5,26 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <netdb.h>
 #include <string.h>
 #include <signal.h>
 #include <stddef.h>
 #include <ctype.h>
 #include <time.h>
+#include <dirent.h>
 
 #define max(A,B) ((A)>=(B)?(A):(B))
 
 int verbose_mode = 0; // 0 desativado; 1 ativado
-int game_started = 0; // 0 nao ha nenhum; fd há jogo e é esse o file
 FILE *fptr;
 char colors[6] = {'R', 'G', 'B', 'Y', 'O', 'P'};
-long int clock_my = 0; 
+long int clock_my = 0;
+
+DIR *DIR_games;
+struct dirent *dp_games;
+DIR *DIR_scores;
+struct dirent *dp_scores;
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -33,9 +39,9 @@ char* start(char* arguments){
     char* PLID, *time, *endptr;
     long int num_PLID, num_time;
     //char solution[4];
+    FILE *game_file;
+    int *created;    
     
-    if(game_started == 1)
-        return "RSG NOK\n";
     
     PLID = strtok(arguments, " ");
     time = strtok(NULL, " ");
@@ -57,26 +63,38 @@ char* start(char* arguments){
     if (num_PLID == 0 || num_time == 0 || num_time > 600)
         return "RSG ERR\n";
     
-    //CRIAR FILE com PLID que vai ser o nome mas com o que a frente?
-    // fptr = fopen(strcat(PLID,".txt"), "w");
-    // if (fptr == NULL) { 
-    //     fprintf(stderr, "Could not open file\n");
-    //     exit(EXIT_FAILURE);
-    // } 
-    // for (size_t i = 0; i < 4; i++)
-    //     solution[i] = colors[rand() % 6];
-    // solution[4] = '\0';
-    // fputs(solution,fptr);
-    // fputs("\n",fptr);
-    // fflush(fptr);
-    game_started = 1;
+
+    game_file = SearchOrCreateGameFile("GAMES", num_PLID, created);
+    if (game_file == NULL) {
+        printf("Failed to access or create the game file.\n");
+        return "RSG ERR\n";
+    }
+
+    if (created == 1){
+        fclose(game_file);
+        return "RSG NOK\n";
+    }
+
+    WriteGameStart(game_file, num_PLID, "P", color_code, num_time);
+
     //inicar o relogio aqui com o num_time
     // POR AGORA:
     clock_my = num_time;
-
+    fclose(game_file);
     return "RSG OK\n";
 }
 
+
+
+// NAO APAGAR É IMPORTANTE PARA O FINAL DO JOGO
+
+// DIR *game_dir;
+// game_dir = SearchOrCreateGameDir("GAMES", PLID);
+//     if (game_dir == NULL) {
+//         printf("Failed to access or create 'GAME_%s'.\n", PLID);
+//         return "RSG ERR\n";
+//     }
+// closedir(game_dir);
 
 
 
@@ -114,15 +132,35 @@ int main(int argc, char *argv[]){
         verbose_mode = 1;
     }
 
-    //ver se existe jogo nao acabado se existir abrir logo o jogo
-    //Ter variavel para ser mais facil verificar depois
-    // se esta a 1 entao encontrou se nao esta a 0
+
+    const char* dir_games = "GAMES";
+    struct stat sb_games;
+    const char* dir_scores = "SCORES";
+    struct stat sb_scores;
+ 
+    if (stat(dir_games, &sb_games) == -1) //Path does not exist
+        mkdir(dir_games, 0777);
+    else // exists
+        printf("Path already exists, continuing");
+    
+    if (stat(dir_scores, &sb_scores) == -1) //Path does not exist
+        mkdir(dir_scores, 0777);
+    else // exists
+        printf("Path already exists, continuing");
+    
+    if ((DIR_games = opendir (dir_games)) == NULL) {
+        perror ("Cannot open dir GAMES");
+        exit(EXIT_FAILURE);
+    }
+    if ((DIR_scores = opendir (dir_scores)) == NULL) {
+        perror ("Cannot open dir SCORES");
+        exit(EXIT_FAILURE);
+    }
 
     memset(&act,0,sizeof act);
     act.sa_handler=SIG_IGN;
     if(sigaction(SIGPIPE,&act,NULL) == -1)/*error*/
         exit(EXIT_FAILURE);
-
 
     //PARA UDP
     fd_udp=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
@@ -141,9 +179,6 @@ int main(int argc, char *argv[]){
     if(bind(fd_udp,res_udp->ai_addr, res_udp->ai_addrlen) == -1)/*error*/
         exit(EXIT_FAILURE);
     
-
-
-
     //PARA TCP
     fd_tcp=socket(AF_INET,SOCK_STREAM,0);//TCP socket
     if(fd_tcp==-1)
