@@ -289,7 +289,7 @@ void debug(char *arguments){ //UDP protocol
 int main(int argc, char *argv[]){
     char *arguments;
     char input[128];
-    struct sigaction act;
+    // struct sigaction act;
 
     if (argc != 1 && argc != 3 && argc != 5){
         fprintf(stderr, "Incorrect Arguments\n");

@@ -94,16 +94,29 @@ void WriteGameStart(FILE *game_file, int PLID, char *mode, const char *color_cod
 
 
 
-char *CreateTimestampedFile(const char *directory, char code, char *first_line, char *rest_file) {
+void CreateTimestampedFile(const char *directory, char *first_line, char *rest_file, char* res_msg) {
     char filename[256];
     time_t raw_time;
     struct tm *time_info;
-    char *color_code, *duration, *start_time;
-
+    int duration,difference;
+    long int start_time;
+    char date[11], time_str[9], code, color_code[5];
     // Get the current time
     time(&raw_time);
     time_info = localtime(&raw_time);
 
+    strftime(date, sizeof(date), "%Y-%m-%d", time_info);
+    strftime(time_str, sizeof(time_str), "%H:%M:%S", time_info);
+
+    sscanf(first_line, "%*6s %*1c %4s %d %*10s %*8s %ld", color_code, &duration, &start_time);
+    difference = raw_time - start_time;
+    if(duration <= difference){
+        code = 'T';
+        difference = duration;
+    }
+    else
+        code = 'Q';
+    
     // Format the filename as YYYYMMDD_HHMMSS_Q.txt
     snprintf(filename, sizeof(filename), "%s/%04d%02d%02d_%02d%02d%02d_%c.txt", 
              directory,
@@ -118,34 +131,20 @@ char *CreateTimestampedFile(const char *directory, char code, char *first_line, 
     FILE *file = fopen(filename, "w+");
     if (file == NULL) {
         perror("fopen");
-        return "ERR";
+        sprintf(res_msg, "ERR");
+        return;
     }
-    fprintf(file,"%s\n%s",first_line,rest_file);
+    
+    fprintf(file,"%s\n",first_line); // File com o jogo
+    if (rest_file != NULL)
+        fprintf(file,"%s",rest_file);
+    
+    fprintf(file, "%s %s %d\n", date, time_str, difference); // Ultima linha
 
-    sscanf(first_line, "%*6s %*c %4s %d %*10s %*8s %ld", color_code, duration, start_time);
-
-    WriteGameEND();
-
-    return color_code;
-}
-
-
-
-void WriteGameEND(FILE *game_file, int PLID, char *mode, const char *color_code, int time_limit) {
-    time_t raw_time;
-    struct tm *time_info;
-    char date[11];
-    char time_str[9];
-
-    time(&raw_time);
-    time_info = localtime(&raw_time);
-
-    strftime(date, sizeof(date), "%Y-%m-%d", time_info);
-    strftime(time_str, sizeof(time_str), "%H:%M:%S", time_info);
-
-    fprintf(game_file, "%s %s %ld\n", date, time_str, raw_time - );
-
-    fflush(game_file);
+    fflush(file);
+    fclose(file);
+    sprintf(res_msg, "OK %s",color_code);
+    return;
 }
 
 

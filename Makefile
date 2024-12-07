@@ -13,4 +13,5 @@ $(CLIENT):
 	$(CC) $(CFLAGS) Client.c extra.c -o $(CLIENT)
 
 clean:
-	rm -f $(SERVER) $(CLIENT) 
+	rm -f $(SERVER) $(CLIENT)
+	rm -rf GAMES SCORES

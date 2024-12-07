@@ -95,23 +95,22 @@ char* start(char* arguments){
 
 
 
-char* quit(char* arguments){ //UDP protocol
+void quit(char* arguments, char *res_msg){ //UDP protocol
 
-    char* res_msg, *endptr, *buffer, *first_line, *rest_file;
+    char *endptr, *buffer, *first_line, *rest_file, *res_function_msg;
     int num_PLID, created;
-    char filepath[256], dirpath[256];
+    char dirpath[256], filename[50];
     DIR *DIR_player_games;
-    FILE *game_file, *end_game_file;
+    FILE *game_file;
     struct stat sb_games;
-    long file_size;
-    time_t raw_time;
-
+    size_t file_size;
 
     num_PLID = strtol(arguments, &endptr, 10);
     created = CheckGameFileExists("GAMES", num_PLID);
-    if (created == 0)
-        return "RQT NOK\n";
-
+    if (created == 0){
+        strcat(res_msg,"RQT NOK\n");
+        return;
+    }
     game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
 
     fseek(game_file, 0, SEEK_END);
@@ -119,15 +118,11 @@ char* quit(char* arguments){ //UDP protocol
     rewind(game_file);
 
     buffer = (char *)malloc(file_size + 1);
-    if (buffer == NULL) {
-        perror("malloc");
-        return "RQT ERR\n";
-    }
-
     if (fread(buffer, 1, file_size, game_file) != file_size) {
         perror("fread");
         free(buffer);
-        return "RQT ERR\n";
+        strcat(res_msg,"RQT ERR\n");
+        return;
     }
     buffer[file_size] = '\0';
     first_line = strtok(buffer,"\n");
@@ -140,15 +135,18 @@ char* quit(char* arguments){ //UDP protocol
     
     if ((DIR_player_games = opendir(dirpath)) == NULL) {
         perror ("Cannot open dir GAMES/<PLID>");
-        return "RQT ERR\n";
+        strcat(res_msg,"RQT ERR\n");
+        return;
     }
-    
-    raw_time = time(NULL);
+    res_function_msg = (char*) calloc(20,1);
+    CreateTimestampedFile(dirpath,first_line,rest_file,res_function_msg);
+    sprintf(res_msg, "RQT %s\n", res_function_msg);
 
-    end_game_file = CreateTimestampedFile(dirpath,"Q",first_line,rest_file);
-
-    res_msg = (char*) calloc(15,1);
-
+    closedir(DIR_player_games);
+    snprintf(filename, sizeof(filename), "GAMES/GAME_%d.txt", num_PLID);
+    fclose(game_file);
+    remove(filename);
+    free(res_function_msg);
 }
 
 
@@ -290,9 +288,11 @@ int main(int argc, char *argv[]){
                         
                     }
                     else if (strcmp(command,"QUT") == 0){
-                        char* res_msg = quit(arguments);
+                        char *res_msg = (char*) calloc(20,1);
+                        quit(arguments,res_msg);
                         if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
                             exit(EXIT_FAILURE);
+                        free(res_msg);
                     }
                     else if (strcmp(command,"DBG") == 0){
                     }
