@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <stddef.h>
-
+#include <signal.h>
 
 
 char *port, *ip_address;
@@ -289,27 +289,23 @@ void debug(char *arguments){ //UDP protocol
 int main(int argc, char *argv[]){
     char *arguments;
     char input[128];
+    struct sigaction act;
 
     if (argc != 1 && argc != 3 && argc != 5){
         fprintf(stderr, "Incorrect Arguments\n");
         exit(EXIT_FAILURE);
     }
     if (argc == 1){
-        // IP DO NOSSO PC
-        ip_address = getIPaddress();
-
-        // Port 58000 + nº Grupo(14)
-        port = "58014";
+        ip_address = getIPaddress();// IP DO NOSSO PC
+        port = "58014";// Port 58000 + nº Grupo(14)
     }
     else if (argc == 3){
         if (strcmp(argv[1],"-n") == 0){
             ip_address = argv[2];
-            // Port 58000 + nº Grupo(14)
-            port = "58014";
+            port = "58014";// Port 58000 + nº Grupo(14)
         }       
         else{
-            // IP DO NOSSO PC
-            ip_address = getIPaddress();
+            ip_address = getIPaddress();// IP DO NOSSO PC
             port = argv[2];
         }
     }
@@ -317,6 +313,16 @@ int main(int argc, char *argv[]){
         ip_address = argv[2];
         port = argv[4];
     }
+
+    // FALTA ESTA PARTE
+
+    // memset(&act, 0, sizeof act);
+    // act.sa_handler = SIG_IGN;
+    // if (sigaction(SIGPIPE, &act, NULL) == -1) {
+    //     perror("sigaction failed");
+    //     exit(EXIT_FAILURE);
+    // }
+
     while (1){ 
         fgets(input, sizeof(input), stdin);
 

@@ -7,7 +7,9 @@
 
 DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID);
 int CheckGameFileExists(const char *directory, int PLID);
-FILE *CreateAndOpenGameFile(const char *directory, int PLID);
+
+FILE *CreateAndOpenGameFile(const char *directory, int PLID, char* open_type);
+FILE *CreateTimestampedFile(const char *directory, char code);
 
 void WriteGameStart(FILE *game_file, int PLID, char *mode, const char *color_code, int time_limit);
 

@@ -64,7 +64,7 @@ char* start(char* arguments){
         return "RSG NOK\n";
 
 
-    game_file = CreateAndOpenGameFile("GAMES", num_PLID);
+    game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "w+");
     if (game_file == NULL) {
         printf("Failed to access or create the game file.\n");
         return "RSG ERR\n";
@@ -94,6 +94,65 @@ char* start(char* arguments){
 
 
 
+
+char* quit(char* arguments){ //UDP protocol
+
+    char* res_msg, *endptr, *buffer, *first_line, *rest_file;
+    int num_PLID, created;
+    char filepath[256], dirpath[256];
+    DIR *DIR_player_games;
+    FILE *game_file, *end_game_file;
+    struct stat sb_games;
+    long file_size;
+    time_t raw_time;
+
+
+    num_PLID = strtol(arguments, &endptr, 10);
+    created = CheckGameFileExists("GAMES", num_PLID);
+    if (created == 0)
+        return "RQT NOK\n";
+
+    game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
+
+    fseek(game_file, 0, SEEK_END);
+    file_size = ftell(game_file);
+    rewind(game_file);
+
+    buffer = (char *)malloc(file_size + 1);
+    if (buffer == NULL) {
+        perror("malloc");
+        return "RQT ERR\n";
+    }
+
+    if (fread(buffer, 1, file_size, game_file) != file_size) {
+        perror("fread");
+        free(buffer);
+        return "RQT ERR\n";
+    }
+    buffer[file_size] = '\0';
+    first_line = strtok(buffer,"\n");
+    rest_file = strtok(NULL,"");
+
+    snprintf(dirpath, sizeof(dirpath), "GAMES/%d", num_PLID);
+    
+    if (stat(dirpath, &sb_games) == -1) //Path does not exist
+        mkdir(dirpath, 0777);
+    
+    if ((DIR_player_games = opendir(dirpath)) == NULL) {
+        perror ("Cannot open dir GAMES/<PLID>");
+        return "RQT ERR\n";
+    }
+    
+    raw_time = time(NULL);
+
+    end_game_file = CreateTimestampedFile(dirpath,"Q",first_line,rest_file);
+
+    res_msg = (char*) calloc(15,1);
+
+}
+
+
+
 int main(int argc, char *argv[]){
     char *port, *command, *arguments;
     struct sockaddr_in addr;
@@ -110,10 +169,9 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "Incorrect Arguments\n");
         exit(EXIT_FAILURE);
     }
-    if (argc == 1){
-        // Port 58000 + nº Grupo(14)
-        port = "58014";
-    }
+    if (argc == 1)        
+        port = "58014";// Port 58000 + nº Grupo(14)
+        
     else if (argc == 2){
         if (strcmp(argv[1],"-p") == 0)
             port = argv[2];
@@ -139,11 +197,11 @@ int main(int argc, char *argv[]){
     if (stat(dir_scores, &sb_scores) == -1) //Path does not exist
         mkdir(dir_scores, 0777);
     
-    if ((DIR_games = opendir (dir_games)) == NULL) {
+    if ((DIR_games = opendir(dir_games)) == NULL) {
         perror ("Cannot open dir GAMES");
         exit(EXIT_FAILURE);
     }
-    if ((DIR_scores = opendir (dir_scores)) == NULL) {
+    if ((DIR_scores = opendir(dir_scores)) == NULL) {
         perror ("Cannot open dir SCORES");
         exit(EXIT_FAILURE);
     }
@@ -152,6 +210,8 @@ int main(int argc, char *argv[]){
     act.sa_handler=SIG_IGN;
     if(sigaction(SIGPIPE,&act,NULL) == -1)/*error*/
         exit(EXIT_FAILURE);
+
+
 
     //PARA UDP
     fd_udp=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
@@ -170,6 +230,8 @@ int main(int argc, char *argv[]){
     if(bind(fd_udp,res_udp->ai_addr, res_udp->ai_addrlen) == -1)/*error*/
         exit(EXIT_FAILURE);
     
+
+
     //PARA TCP
     fd_tcp=socket(AF_INET,SOCK_STREAM,0);//TCP socket
     if(fd_tcp==-1)
@@ -190,6 +252,8 @@ int main(int argc, char *argv[]){
     if(listen(fd_tcp,5) == -1)/*error*/ 
         exit(EXIT_FAILURE);
 
+
+
     FD_ZERO(&inputs); // Clear input mask
     FD_SET(fd_udp,&inputs); // Set UDP channel on
     FD_SET(fd_tcp,&inputs); // Set TCP channel on
@@ -206,7 +270,7 @@ int main(int argc, char *argv[]){
                 exit(1);
             default:
                 if(FD_ISSET(fd_tcp,&testfds)){
-                    
+                    //printf("ola TCP");
                 }
                 if(FD_ISSET(fd_udp,&testfds)){
 
@@ -226,6 +290,9 @@ int main(int argc, char *argv[]){
                         
                     }
                     else if (strcmp(command,"QUT") == 0){
+                        char* res_msg = quit(arguments);
+                        if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
+                            exit(EXIT_FAILURE);
                     }
                     else if (strcmp(command,"DBG") == 0){
                     }

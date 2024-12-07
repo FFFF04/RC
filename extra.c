@@ -21,12 +21,9 @@ DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID) {
     struct stat sb_games;
     DIR *dp;
 
-    // Construct the target directory path
     snprintf(target_path, sizeof(target_path), "%s/GAME_%d", parent_dir, PLID);
 
-    // Check if the directory exists
     if (stat(target_path, &sb_games) == -1) {
-        // Directory does not exist, create it
         if (mkdir(target_path, 0777) == 0);
         else {
             perror("mkdir");
@@ -34,7 +31,6 @@ DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID) {
         }
     } 
 
-    // Open the directory
     dp = opendir(target_path);
     if (dp == NULL) {
         perror("opendir");
@@ -46,30 +42,27 @@ DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID) {
 
 
 
-
 int CheckGameFileExists(const char *directory, int PLID) {
     char filepath[256];
     struct stat sb;
 
-    // Construct the file path
     snprintf(filepath, sizeof(filepath), "%s/GAME_%d.txt", directory, PLID);
 
-    // Check if the file exists
     if (stat(filepath, &sb) == 0)
         return 1; // File exists
     
     return 0; // File does not exist
 }
 
-FILE *CreateAndOpenGameFile(const char *directory, int PLID) {
+
+
+FILE *CreateAndOpenGameFile(const char *directory, int PLID, char* open_type) {
     char filepath[256];
     FILE *file;
 
-    // Construct the file path
-    snprintf(filepath, sizeof(filepath), "%s/GAME_%d.txt", directory, PLID);
+    snprintf(filepath, sizeof(filepath), "%s%d.txt", directory, PLID);
 
-    // Create the file and open it for writing
-    file = fopen(filepath, "w+");
+    file = fopen(filepath, open_type);
     if (file == NULL) {
         perror("fopen");
         return NULL;
@@ -84,22 +77,74 @@ FILE *CreateAndOpenGameFile(const char *directory, int PLID) {
 void WriteGameStart(FILE *game_file, int PLID, char *mode, const char *color_code, int time_limit) {
     time_t raw_time;
     struct tm *time_info;
-    char date[11];  // Format: YYYY-MM-DD
-    char time_str[9]; // Format: HH:MM:SS
+    char date[11];
+    char time_str[9];
+
+    time(&raw_time);
+    time_info = localtime(&raw_time);
+
+    strftime(date, sizeof(date), "%Y-%m-%d", time_info);
+    strftime(time_str, sizeof(time_str), "%H:%M:%S", time_info);
+
+    fprintf(game_file, "%d %s %s %d %s %s %ld\n", 
+            PLID, mode, color_code, time_limit, date, time_str, raw_time);
+
+    fflush(game_file);
+}
+
+
+
+char *CreateTimestampedFile(const char *directory, char code, char *first_line, char *rest_file) {
+    char filename[256];
+    time_t raw_time;
+    struct tm *time_info;
+    char *color_code, *duration, *start_time;
 
     // Get the current time
     time(&raw_time);
     time_info = localtime(&raw_time);
 
-    // Format the date and time
+    // Format the filename as YYYYMMDD_HHMMSS_Q.txt
+    snprintf(filename, sizeof(filename), "%s/%04d%02d%02d_%02d%02d%02d_%c.txt", 
+             directory,
+             time_info->tm_year + 1900,   // Year
+             time_info->tm_mon + 1,       // Month
+             time_info->tm_mday,          // Day
+             time_info->tm_hour,          // Hour
+             time_info->tm_min,           // Minute
+             time_info->tm_sec,           // Second
+             code);
+
+    FILE *file = fopen(filename, "w+");
+    if (file == NULL) {
+        perror("fopen");
+        return "ERR";
+    }
+    fprintf(file,"%s\n%s",first_line,rest_file);
+
+    sscanf(first_line, "%*6s %*c %4s %d %*10s %*8s %ld", color_code, duration, start_time);
+
+    WriteGameEND();
+
+    return color_code;
+}
+
+
+
+void WriteGameEND(FILE *game_file, int PLID, char *mode, const char *color_code, int time_limit) {
+    time_t raw_time;
+    struct tm *time_info;
+    char date[11];
+    char time_str[9];
+
+    time(&raw_time);
+    time_info = localtime(&raw_time);
+
     strftime(date, sizeof(date), "%Y-%m-%d", time_info);
     strftime(time_str, sizeof(time_str), "%H:%M:%S", time_info);
 
-    // Write the formatted data to the game file
-    fprintf(game_file, "%d %s %s %d %s %s %ld\n", 
-            PLID, mode, color_code, time_limit, date, time_str, raw_time);
+    fprintf(game_file, "%s %s %ld\n", date, time_str, raw_time - );
 
-    // Flush the file to ensure data is written
     fflush(game_file);
 }
 
@@ -110,29 +155,21 @@ int FindLastGame(char *PLID, char *fname) {
     int nentries, found;
     char dirname[20];
 
-    // Construct the directory path
     sprintf(dirname, "GAMES/%s/", PLID);
 
-    // Scan the directory and sort files alphabetically
     nentries = scandir(dirname, &filelist, 0, alphasort);
     found = 0;
 
-    // If no entries are found, return 0
     if (nentries <= 0) {
         return 0;
     } else {
-        // Iterate through the entries from last to first
         while (nentries--) {
-            // Check if the entry is not a hidden file and if no game is found yet
             if (filelist[nentries]->d_name[0] != '.' && !found) {
-                // Construct the file path of the last game
                 sprintf(fname, "GAMES/%s/%s", PLID, filelist[nentries]->d_name);
                 found = 1;
             }
-            // Free the memory allocated for the entry
             free(filelist[nentries]);
         }
-        // Free the file list
         free(filelist);
     }
 
@@ -235,6 +272,8 @@ char* getIPaddress()
     return ip_address;
 }
 
+
+
 int UDP(char* line, char* ip_address, char* port, char* msg) {
     struct addrinfo hints, *res;
     int fd, n;
@@ -298,7 +337,8 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
         if (n == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK){
                 tries++;
-                printf("Failed to send message to the server, trying again\n");
+                if (tries != MAX_TRIES)
+                    printf("Failed to send message to the server, trying again\n");
                 continue;
             }
             else{ 
