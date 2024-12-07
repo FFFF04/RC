@@ -1,4 +1,5 @@
 #include "Server.h"
+#include "extra.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,11 +27,6 @@ struct dirent *dp_games;
 DIR *DIR_scores;
 struct dirent *dp_scores;
 
-/*
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!! TEMOS DE FAZER UM RELOGIO !!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-*/
 
 char* start(char* arguments){
 
@@ -38,10 +34,9 @@ char* start(char* arguments){
 
     char* PLID, *time, *endptr;
     long int num_PLID, num_time;
-    //char solution[4];
+    char solution[4];
     FILE *game_file;
-    int *created;    
-    
+    int created = 0;    
     
     PLID = strtok(arguments, " ");
     time = strtok(NULL, " ");
@@ -64,22 +59,23 @@ char* start(char* arguments){
         return "RSG ERR\n";
     
 
-    game_file = SearchOrCreateGameFile("GAMES", num_PLID, created);
+    created = CheckGameFileExists("GAMES", num_PLID);
+    if (created == 1)
+        return "RSG NOK\n";
+
+
+    game_file = CreateAndOpenGameFile("GAMES", num_PLID);
     if (game_file == NULL) {
         printf("Failed to access or create the game file.\n");
         return "RSG ERR\n";
     }
 
-    if (created == 1){
-        fclose(game_file);
-        return "RSG NOK\n";
-    }
+    for (size_t i = 0; i < 4; i++)
+        solution[i] = colors[rand() % 6];
+    solution[4] = '\0';
 
-    WriteGameStart(game_file, num_PLID, "P", color_code, num_time);
+    WriteGameStart(game_file, num_PLID, "P", solution, num_time);
 
-    //inicar o relogio aqui com o num_time
-    // POR AGORA:
-    clock_my = num_time;
     fclose(game_file);
     return "RSG OK\n";
 }
@@ -132,7 +128,6 @@ int main(int argc, char *argv[]){
         verbose_mode = 1;
     }
 
-
     const char* dir_games = "GAMES";
     struct stat sb_games;
     const char* dir_scores = "SCORES";
@@ -140,13 +135,9 @@ int main(int argc, char *argv[]){
  
     if (stat(dir_games, &sb_games) == -1) //Path does not exist
         mkdir(dir_games, 0777);
-    else // exists
-        printf("Path already exists, continuing");
     
     if (stat(dir_scores, &sb_scores) == -1) //Path does not exist
         mkdir(dir_scores, 0777);
-    else // exists
-        printf("Path already exists, continuing");
     
     if ((DIR_games = opendir (dir_games)) == NULL) {
         perror ("Cannot open dir GAMES");

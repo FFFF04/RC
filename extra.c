@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <dirent.h>
+#include <time.h>
 #include <sys/stat.h>
 
 #define MAX_TRIES 4 
@@ -26,16 +27,12 @@ DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID) {
     // Check if the directory exists
     if (stat(target_path, &sb_games) == -1) {
         // Directory does not exist, create it
-        if (mkdir(target_path, 0777) == 0) {
-            printf("Directory '%s' created successfully.\n", target_path);
-        } 
+        if (mkdir(target_path, 0777) == 0);
         else {
             perror("mkdir");
             return NULL;
         }
     } 
-    else 
-        printf("Path '%s' already exists, continuing.\n", target_path);
 
     // Open the directory
     dp = opendir(target_path);
@@ -50,38 +47,32 @@ DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID) {
 
 
 
-FILE *SearchOrCreateGameFile(const char *directory, int PLID, int *created) {
+int CheckGameFileExists(const char *directory, int PLID) {
     char filepath[256];
     struct stat sb;
-    FILE *file;
 
     // Construct the file path
     snprintf(filepath, sizeof(filepath), "%s/GAME_%d.txt", directory, PLID);
 
     // Check if the file exists
-    if (stat(filepath, &sb) == 0) {
-        // File exists, open it for reading and writing
-        printf("File '%s' found, opening.\n", filepath);
-        file = fopen(filepath, "r+");
-        if (file == NULL) {
-            perror("fopen");
-            return NULL;
-        }
-        created = 1;
-    } 
-    else {
-        // File does not exist, create it
-        printf("File '%s' not found, creating new game file.\n", filepath);
-        file = fopen(filepath, "w+");
-        if (file == NULL) {
-            perror("fopen");
-            return NULL;
-        }
+    if (stat(filepath, &sb) == 0)
+        return 1; // File exists
+    
+    return 0; // File does not exist
+}
 
-        // Initialize the new game file with default data if necessary
-        fprintf(file, "New game created for PLID: %d\n", PLID);
-        fflush(file);
-        created = 0;
+FILE *CreateAndOpenGameFile(const char *directory, int PLID) {
+    char filepath[256];
+    FILE *file;
+
+    // Construct the file path
+    snprintf(filepath, sizeof(filepath), "%s/GAME_%d.txt", directory, PLID);
+
+    // Create the file and open it for writing
+    file = fopen(filepath, "w+");
+    if (file == NULL) {
+        perror("fopen");
+        return NULL;
     }
 
     return file;
@@ -89,7 +80,8 @@ FILE *SearchOrCreateGameFile(const char *directory, int PLID, int *created) {
 
 
 
-void WriteGameStart(FILE *game_file, int PLID, char mode, const char *color_code, int time_limit) {
+
+void WriteGameStart(FILE *game_file, int PLID, char *mode, const char *color_code, int time_limit) {
     time_t raw_time;
     struct tm *time_info;
     char date[11];  // Format: YYYY-MM-DD
@@ -104,7 +96,7 @@ void WriteGameStart(FILE *game_file, int PLID, char mode, const char *color_code
     strftime(time_str, sizeof(time_str), "%H:%M:%S", time_info);
 
     // Write the formatted data to the game file
-    fprintf(game_file, "%d %c %s %d %s %s %ld\n", 
+    fprintf(game_file, "%d %s %s %d %s %s %ld\n", 
             PLID, mode, color_code, time_limit, date, time_str, raw_time);
 
     // Flush the file to ensure data is written
@@ -149,63 +141,63 @@ int FindLastGame(char *PLID, char *fname) {
 
 
 
-int FindTopScores(SCORELIST *list) {
-    struct dirent **filelist;
-    int nentries, ifile;
-    char fname[300];
-    FILE *fp;
-    char mode[8];
+// int FindTopScores(SCORELIST *list) {
+//     struct dirent **filelist;
+//     int nentries, ifile;
+//     char fname[300];
+//     FILE *fp;
+//     char mode[8];
 
-    // Scan the directory and sort files alphabetically
-    nentries = scandir("SCORES/", &filelist, 0, alphasort);
+//     // Scan the directory and sort files alphabetically
+//     nentries = scandir("SCORES/", &filelist, 0, alphasort);
 
-    // If no entries are found, return 0
-    if (nentries <= 0) {
-        return 0;
-    } else {
-        ifile = 0;
+//     // If no entries are found, return 0
+//     if (nentries <= 0) {
+//         return 0;
+//     } else {
+//         ifile = 0;
 
-        // Iterate through the entries from last to first
-        while (nentries--) {
-            // Check if the entry is not a hidden file and we haven't reached the top 10
-            if (filelist[nentries]->d_name[0] != '.' && ifile < 10) {
-                // Construct the file path
-                sprintf(fname, "SCORES/%s", filelist[nentries]->d_name);
+//         // Iterate through the entries from last to first
+//         while (nentries--) {
+//             // Check if the entry is not a hidden file and we haven't reached the top 10
+//             if (filelist[nentries]->d_name[0] != '.' && ifile < 10) {
+//                 // Construct the file path
+//                 sprintf(fname, "SCORES/%s", filelist[nentries]->d_name);
 
-                // Open the file for reading
-                fp = fopen(fname, "r");
-                if (fp != NULL) {
-                    // Read data from the file
-                    fscanf(fp, "%d %s %s %d %s",
-                           &list->score[ifile],
-                           list->PLID[ifile],
-                           list->colcode[ifile],
-                           &list->ntries[ifile],
-                           mode);
+//                 // Open the file for reading
+//                 fp = fopen(fname, "r");
+//                 if (fp != NULL) {
+//                     // Read data from the file
+//                     fscanf(fp, "%d %s %s %d %s",
+//                            &list->score[ifile],
+//                            list->PLID[ifile],
+//                            list->colcode[ifile],
+//                            &list->ntries[ifile],
+//                            mode);
 
-                    // Parse the game mode
-                    if (!strcmp(mode, "PLAY"))
-                        list->mode[ifile] = MODEPLAY;
-                    if (!strcmp(mode, "DEBUG"))
-                        list->mode[ifile] = MODEDEBUG;
+//                     // Parse the game mode
+//                     if (!strcmp(mode, "PLAY"))
+//                         list->mode[ifile] = MODEPLAY;
+//                     if (!strcmp(mode, "DEBUG"))
+//                         list->mode[ifile] = MODEDEBUG;
 
-                    // Close the file
-                    fclose(fp);
-                    ++ifile;
-                }
-            }
-            // Free the memory allocated for the entry
-            free(filelist[nentries]);
-        }
-        // Free the file list
-        free(filelist);
-    }
+//                     // Close the file
+//                     fclose(fp);
+//                     ++ifile;
+//                 }
+//             }
+//             // Free the memory allocated for the entry
+//             free(filelist[nentries]);
+//         }
+//         // Free the file list
+//         free(filelist);
+//     }
 
-    // Update the number of scores in the list
-    list->nscores = ifile;
+//     // Update the number of scores in the list
+//     list->nscores = ifile;
 
-    return ifile;
-}
+//     return ifile;
+// }
 
 
 
