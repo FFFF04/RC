@@ -58,14 +58,12 @@ void TRY(char* arguments){ //UDP protocol
     char *protocol;
     
     snprintf(msg, sizeof(msg), "TRY %s %s %d\n", plId, strtok(arguments,"\n"), nT);
-    UDP(msg,ip_address,port,res_msg);
     
     if (UDP(msg,ip_address,port,res_msg) == 1){
         free(res_msg);
         return;
     }
-    
-    
+
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
 

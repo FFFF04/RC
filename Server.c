@@ -90,16 +90,72 @@ char* start(char* arguments){
 
 
 
-// NAO APAGAR É IMPORTANTE PARA O FINAL DO JOGO
+void TRY(char* arguments, char *res_msg){
 
-// DIR *game_dir;
-// game_dir = SearchOrCreateGameDir("GAMES", PLID);
-//     if (game_dir == NULL) {
-//         printf("Failed to access or create 'GAME_%s'.\n", PLID);
-//         return "RSG ERR\n";
-//     }
-// closedir(game_dir);
+    char* PLID, *endptr, *solution_string;
+    char solution[4];
+    long int num_PLID, num_nt;
+    int charcount = 0;
+    int  index = 0;
+    size_t i;
 
+    for(i = 0; arguments[i]; i++) {
+        if(arguments[i] == ' ') 
+            charcount++;
+    }
+    if (charcount != 5){ 
+        strcat(res_msg,"RTR ERR\n");
+        return;    
+    }
+    
+    PLID = strtok(arguments, " ");
+    if (strlen(PLID) != 6){ 
+        strcat(res_msg,"RTR ERR\n");
+        return;    
+    }
+    
+    for (i = 0; i < strlen(PLID); i++){
+        if (isdigit(PLID[i]) == 0){ 
+            strcat(res_msg,"RTR ERR\n");
+            return;    
+        }
+    }
+    
+    num_PLID = strtol(PLID, &endptr, 10);
+    if (num_PLID == 0){ 
+        strcat(res_msg,"RTR ERR\n");
+        return;    
+    }
+    solution_string = strtok(NULL, " ");
+    i = 0;
+    while (i <= 3) {
+        char color = solution_string[0];
+        int valid = 0;
+
+        for (int j = 0; j < 6; j++) {
+            if (toupper(color) == colors[j]) {
+                valid = 1;
+                break;
+            }
+        }
+        if (!valid){ 
+            strcat(res_msg,"RTR ERR\n");
+            return;    
+        }   
+        if (index < 4) 
+            solution[index++] = toupper(color);
+        
+        solution_string = strtok(NULL, " ");
+        i++;
+    }
+    solution[index] = '\0';
+
+    num_nt = strtol(solution_string, &endptr, 10);
+    printf("%s\n",solution);
+    printf("%ld\n",num_nt);
+    strcat(res_msg,"RTR OK\n");
+    return;
+}
 
 
 
@@ -185,32 +241,30 @@ char* debug(char* arguments){
         if(arguments[i] == ' ')
             charcount++;
     }
-    printf("%d\n",charcount);
     if (charcount != 5)
-        return "RSG ERR\n";
+        return "RDB ERR\n";
 
     PLID = strtok(arguments, " ");
     time = strtok(NULL, " ");
     if (strlen(PLID) != 6)
-        return "RSG ERR\n";
+        return "RDB ERR\n";
     
     for (size_t i = 0; i < strlen(PLID); i++){
         if (isdigit(PLID[i]) == 0)
-            return "RSG ERR\n";
+            return "RDB ERR\n";
     }
-    for (size_t i = 0; i < strlen(time)-1; i++){
-        if (isdigit(time[i]) == 0 )
-            return "RSG ERR\n";
+    for (size_t i = 0; i < strlen(time); i++){
+        if (isdigit(time[i]) == 0)
+            return "RDB ERR\n";
     }
     
     num_PLID = strtol(PLID, &endptr, 10);
     num_time = strtol(time, &endptr, 10);
     if (num_PLID == 0 || num_time == 0 || num_time > 600)
-        return "RSG ERR\n";
+        return "RDB ERR\n";
 
     solution_string = strtok(NULL, "\n");
     solution_string_less_n = strtok(solution_string, " ");
-    printf("%s\n",solution_string_less_n);
     while (solution_string_less_n != NULL) {
 
         char color = solution_string_less_n[0];
@@ -223,27 +277,25 @@ char* debug(char* arguments){
             }
         }
         if (!valid) 
-            return "RSG ERR\n";        
+            return "RDB ERR\n";        
         if (index < 4) 
             solution[index++] = toupper(color);
         
         solution_string_less_n = strtok(NULL, " ");
     }
     solution[index] = '\0';
-    printf("porg\n");
     created = CheckGameFileExists("GAMES", num_PLID);
     if (created == 1)
-        return "RSG NOK\n";
-
+        return "RDB NOK\n";
 
     game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "w+");
     if (game_file == NULL)
-        return "RSG ERR\n";
+        return "RDB ERR\n";
 
     WriteGameStart(game_file, num_PLID, "D", solution, num_time);
 
     fclose(game_file);
-    return "RSG OK\n";
+    return "RDB OK\n";
 }
 
 
@@ -355,8 +407,7 @@ int main(int argc, char *argv[]){
 
         select_fds = select(FD_SETSIZE,&testfds,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) NULL);
 
-        switch(select_fds)
-        {
+        switch(select_fds){
             case -1:
                 perror("select");
                 exit(1);
@@ -378,8 +429,12 @@ int main(int argc, char *argv[]){
                         if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
                             exit(EXIT_FAILURE);
                     }
-                    else if (strcmp(command,"try") == 0){
-                        
+                    else if (strcmp(command,"TRY") == 0){
+                        char *res_msg = (char*) calloc(30,1);
+                        TRY(arguments,res_msg);
+                        if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
+                            exit(EXIT_FAILURE);
+                        free(res_msg);
                     }
                     else if (strcmp(command,"QUT") == 0){
                         char *res_msg = (char*) calloc(20,1);
