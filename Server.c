@@ -28,6 +28,7 @@ DIR *DIR_scores;
 struct dirent *dp_scores;
 
 
+
 char* start(char* arguments){
 
     srand((unsigned int) time(NULL));
@@ -37,7 +38,16 @@ char* start(char* arguments){
     char solution[4];
     FILE *game_file;
     int created = 0;    
+    int charcount = 0;
+
+    for(int i = 0; arguments[i]; i++) {
+        if(arguments[i] == ' ') 
+            charcount++;
+    }
+    if (charcount != 1)
+        return "RSG ERR\n";
     
+
     PLID = strtok(arguments, " ");
     time = strtok(NULL, " ");
 
@@ -65,10 +75,8 @@ char* start(char* arguments){
 
 
     game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "w+");
-    if (game_file == NULL) {
-        printf("Failed to access or create the game file.\n");
+    if (game_file == NULL)
         return "RSG ERR\n";
-    }
 
     for (size_t i = 0; i < 4; i++)
         solution[i] = colors[rand() % 6];
@@ -104,6 +112,17 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     FILE *game_file;
     struct stat sb_games;
     size_t file_size;
+
+    int charcount = 0;
+
+    for(int i = 0; arguments[i]; i++) {
+        if(arguments[i] == ' ')
+            charcount++;
+    }
+    if (charcount != 0){
+        strcat(res_msg,"RQT ERR\n");
+        return;
+    }
 
     num_PLID = strtol(arguments, &endptr, 10);
     created = CheckGameFileExists("GAMES", num_PLID);
@@ -147,6 +166,84 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     fclose(game_file);
     remove(filename);
     free(res_function_msg);
+    return;
+}
+
+
+
+char* debug(char* arguments){
+
+    char *PLID, *time, *endptr, *solution_string, *solution_string_less_n;
+    char solution[4];
+    long int num_PLID, num_time;
+    FILE *game_file;
+    int created = 0;    
+    int charcount = 0;
+    int index = 0;
+
+    for(int i = 0; arguments[i]; i++) {
+        if(arguments[i] == ' ')
+            charcount++;
+    }
+    printf("%d\n",charcount);
+    if (charcount != 5)
+        return "RSG ERR\n";
+
+    PLID = strtok(arguments, " ");
+    time = strtok(NULL, " ");
+    if (strlen(PLID) != 6)
+        return "RSG ERR\n";
+    
+    for (size_t i = 0; i < strlen(PLID); i++){
+        if (isdigit(PLID[i]) == 0)
+            return "RSG ERR\n";
+    }
+    for (size_t i = 0; i < strlen(time)-1; i++){
+        if (isdigit(time[i]) == 0 )
+            return "RSG ERR\n";
+    }
+    
+    num_PLID = strtol(PLID, &endptr, 10);
+    num_time = strtol(time, &endptr, 10);
+    if (num_PLID == 0 || num_time == 0 || num_time > 600)
+        return "RSG ERR\n";
+
+    solution_string = strtok(NULL, "\n");
+    solution_string_less_n = strtok(solution_string, " ");
+    printf("%s\n",solution_string_less_n);
+    while (solution_string_less_n != NULL) {
+
+        char color = solution_string_less_n[0];
+        int valid = 0;
+
+        for (int i = 0; i < 6; i++) {
+            if (toupper(color) == colors[i]) {
+                valid = 1;
+                break;
+            }
+        }
+        if (!valid) 
+            return "RSG ERR\n";        
+        if (index < 4) 
+            solution[index++] = toupper(color);
+        
+        solution_string_less_n = strtok(NULL, " ");
+    }
+    solution[index] = '\0';
+    printf("porg\n");
+    created = CheckGameFileExists("GAMES", num_PLID);
+    if (created == 1)
+        return "RSG NOK\n";
+
+
+    game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "w+");
+    if (game_file == NULL)
+        return "RSG ERR\n";
+
+    WriteGameStart(game_file, num_PLID, "D", solution, num_time);
+
+    fclose(game_file);
+    return "RSG OK\n";
 }
 
 
@@ -246,11 +343,8 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
     
-    //QUANTOS CLIENTES PODEM IR AO MESMO TEMPO????
     if(listen(fd_tcp,5) == -1)/*error*/ 
         exit(EXIT_FAILURE);
-
-
 
     FD_ZERO(&inputs); // Clear input mask
     FD_SET(fd_udp,&inputs); // Set UDP channel on
@@ -295,6 +389,9 @@ int main(int argc, char *argv[]){
                         free(res_msg);
                     }
                     else if (strcmp(command,"DBG") == 0){
+                        char* res_msg = debug(arguments);
+                        if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
+                            exit(EXIT_FAILURE);
                     }
                     memset(buffer, 0, sizeof(buffer));
                 }

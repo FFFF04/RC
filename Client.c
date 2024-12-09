@@ -268,7 +268,7 @@ void debug(char *arguments){ //UDP protocol
     protocol = strtok(NULL, "");
 
     if (strcmp(protocol,"ERR\n") == 0){
-        fprintf(stdout, "Incorrect Arguments in fuction 'start'\n");
+        fprintf(stdout, "Incorrect Arguments in fuction 'Debug'\n");
         free(res_msg);
         return;
     }

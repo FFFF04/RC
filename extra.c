@@ -177,6 +177,22 @@ int FindLastGame(char *PLID, char *fname) {
 
 
 
+int CalculateScore(int rank, int duration, int max_duration) {
+
+    // Calculate rank factor (normalized between 0 and 1)
+    double rank_factor = (9.0 - rank) / 8.0;
+
+    // Calculate duration factor (normalized between 0 and 1)
+    double duration_factor = 1.0 - ((double)duration / max_duration);
+
+    // Combine factors and scale to 1-100
+    int score = (int)(1 + (rank_factor * duration_factor) * 99);
+
+    return score;
+}
+
+
+
 // int FindTopScores(SCORELIST *list) {
 //     struct dirent **filelist;
 //     int nentries, ifile;
@@ -318,7 +334,7 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
     while (1){
 
         if (tries == MAX_TRIES){
-            printf("No response received from the server, please recent the same command\n");
+            printf("No response received from the server, please resent the same command\n");
             freeaddrinfo(res);
             close(fd);
             return 1;
@@ -356,7 +372,7 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
 
 
 
-
+/*Adicinonar aqui tambem time outs do lado do cliente e server*/
 void TCP(char* line, char* ip_address, char* port, char* msg) {
     struct addrinfo hints, *res;
     int fd, n;
