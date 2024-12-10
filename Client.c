@@ -118,7 +118,7 @@ void TRY(char* arguments){ //UDP protocol
 
 void show_trials(){ //TCP session
 
-    char* res_msg = (char*) calloc(1000,1);
+    char* res_msg = (char*) calloc(2049,1);
     char msg[12];
     char *protocol, *endptr;
 
@@ -156,7 +156,7 @@ void show_trials(){ //TCP session
 
 void scoreboard(){ //TCP session
 
-    char* res_msg = (char*) calloc(1000,1);
+    char* res_msg = (char*) calloc(2049,1);
     char msg[5];
     char *protocol, *endptr;
     

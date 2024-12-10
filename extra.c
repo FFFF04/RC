@@ -17,12 +17,12 @@
 
 #define MAX_TRIES 4 
 
-DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID) {
+DIR *SearchAndCreateGameDir(const char *parent_dir, int PLID) {
     char target_path[256];
     struct stat sb_games;
     DIR *dp;
 
-    snprintf(target_path, sizeof(target_path), "%s/GAME_%d", parent_dir, PLID);
+    snprintf(target_path, sizeof(target_path), "%s%d", parent_dir, PLID);
 
     if (stat(target_path, &sb_games) == -1) {
         if (mkdir(target_path, 0777) == 0);
@@ -41,6 +41,13 @@ DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID) {
     return dp;
 }
 
+
+void removeFile(FILE* game_file, char *directory ,int num_PLID){
+    char filename[50];
+    snprintf(filename, sizeof(filename), "%s%d.txt", directory, num_PLID);
+    fclose(game_file);
+    remove(filename);
+}
 
 
 int CheckGameFileExists(const char *directory, int PLID) {
@@ -68,10 +75,8 @@ FILE *CreateAndOpenGameFile(const char *directory, int PLID, char* open_type) {
         perror("fopen");
         return NULL;
     }
-
     return file;
 }
-
 
 
 
@@ -95,29 +100,14 @@ void WriteGameStart(FILE *game_file, int PLID, char *mode, const char *color_cod
 
 
 
-void CreateTimestampedFile(const char *directory, char *first_line, char *rest_file, char* res_msg) {
+int CreateTimestampedFile_TRY(const char *directory, char *first_line, char *rest_file, 
+    char code, struct tm *time_info, int duration) {
     char filename[256];
-    time_t raw_time;
-    struct tm *time_info;
-    int duration,difference;
     long int start_time;
-    char date[11], time_str[9], code, color_code[4];
-    // Get the current time
-    time(&raw_time);
-    time_info = localtime(&raw_time);
-
-    strftime(date, sizeof(date), "%Y-%m-%d", time_info);
-    strftime(time_str, sizeof(time_str), "%H:%M:%S", time_info);
+    char color_code[4];
 
     sscanf(first_line, "%*6s %*1c %4s %d %*10s %*8s %ld", color_code, &duration, &start_time);
-    difference = raw_time - start_time;
-    if(duration <= difference){
-        code = 'T';
-        difference = duration;
-    }
-    else
-        code = 'Q';
-    
+   
     // Format the filename as YYYYMMDD_HHMMSS_Q.txt
     snprintf(filename, sizeof(filename), "%s/%04d%02d%02d_%02d%02d%02d_%c.txt", 
              directory,
@@ -132,16 +122,100 @@ void CreateTimestampedFile(const char *directory, char *first_line, char *rest_f
     FILE *file = fopen(filename, "w+");
     if (file == NULL) {
         perror("fopen");
-        sprintf(res_msg, "ERR");
-        return;
+        return 1;
     }
     
-    fprintf(file,"%s\n%s%s %s %d\n",first_line,rest_file, date, time_str, difference); // File com o jogo
+    fprintf(file,"%s\n",first_line); // File com o jogo
+    if (rest_file != NULL)
+        fprintf(file,"%s",rest_file);
+
+    fprintf(file, "%04d-%02d-%02d %02d:%02d:%02d %d\n", 
+        time_info->tm_year + 1900, time_info->tm_mon + 1, time_info->tm_mday, 
+        time_info->tm_hour, time_info->tm_min, time_info->tm_sec, duration); // Ultima linha
     
     fflush(file);
     fclose(file);
-    sprintf(res_msg, "OK %s",color_code);
+    return 0;
+}
+
+
+
+void CreateTimestampedFile_QUIT(const char *directory, char *first_line, char *rest_file, char* res_msg) {
+    char filename[256], color_code[5];
+    time_t raw_time;
+    struct tm *time_info;
+    int duration,difference;
+    long int start_time;
+    char code;
+    // Get the current time
+    time(&raw_time);
+    time_info = localtime(&raw_time);
+        
+    sscanf(first_line, "%*6s %*1c %4s %d %*10s %*8s %ld", color_code, &duration, &start_time);
+    difference = raw_time - start_time;
+    if(duration <= difference)
+        difference = duration;
+    code = 'Q';
+    // Format the filename as YYYYMMDD_HHMMSS_Q.txt
+    snprintf(filename, sizeof(filename), "%s/%04d%02d%02d_%02d%02d%02d_%c.txt", 
+             directory,
+             time_info->tm_year + 1900,   // Year
+             time_info->tm_mon + 1,       // Month
+             time_info->tm_mday,          // Day
+             time_info->tm_hour,          // Hour
+             time_info->tm_min,           // Minute
+             time_info->tm_sec,           // Second
+             code);
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        perror("fopen");
+        sprintf(res_msg, "ERR");
+        return;
+    }
+    fprintf(file,"%s\n",first_line); // File com o jogo
+    if (rest_file != NULL)
+        fprintf(file,"%s",rest_file);
+    
+    fprintf(file, "%04d-%02d-%02d %02d:%02d:%02d %d\n", 
+        time_info->tm_year + 1900, time_info->tm_mon + 1, time_info->tm_mday, 
+        time_info->tm_hour, time_info->tm_min, time_info->tm_sec, difference); // Ultima linha
+    
+    fflush(file);
+    fclose(file);
+    sprintf(res_msg, "OK %s", color_code);
     return;
+}
+
+
+
+
+void calculate_blacks_and_whites(char *key, char *key_sol, int *nB, int *nW) {
+    int check_color_key[4] = {0};
+    int check_color_key_sol[4] = {0};
+
+    for (int i = 0; i < 4; i++) {
+        if (key_sol[i] == key[i]) {
+            (*nB)++;
+            check_color_key[i] = 0;
+            check_color_key_sol[i] = 0;
+        } 
+        else{
+            check_color_key[i] = 1;
+            check_color_key_sol[i] = 1;
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (check_color_key[i]) {
+            for (int l = 0; l < 4; l++) {
+                if (check_color_key_sol[l] && (key[i] == key_sol[l])) {
+                    (*nW)++;
+                    check_color_key_sol[l] = 0;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 
@@ -377,7 +451,6 @@ void TCP(char* line, char* ip_address, char* port, char* msg) {
     struct sigaction act;
     fd_set read_fds;
     struct timeval timeout;
-    ssize_t bytes_read;
 
     timeout.tv_sec = 20;
     timeout.tv_usec = 0;
@@ -440,7 +513,7 @@ void TCP(char* line, char* ip_address, char* port, char* msg) {
         printf("TCP not working. Timeout reached. Server is Down!!!\n");
     } 
     else {
-        nleft = 1000; // Max buffer size for receiving
+        nleft = 2049; // Max buffer size for receiving
         while (1) {
             nread = read(fd, msg, nleft);
             if (nread == -1) {

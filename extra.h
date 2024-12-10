@@ -4,15 +4,20 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <dirent.h>
+#include <time.h>
 
-DIR *SearchOrCreateGameDir(const char *parent_dir, int PLID);
+DIR *SearchAndCreateGameDir(const char *parent_dir, int PLID);
+void removeFile(FILE* game_file, char* directory, int num_PLID);
 int CheckGameFileExists(const char *directory, int PLID);
 
 FILE *CreateAndOpenGameFile(const char *directory, int PLID, char* open_type);
-void CreateTimestampedFile(const char *directory, char *first_line, char *rest_file, char* res_msg);
+
+int CreateTimestampedFile_TRY(const char *directory, char *first_line, char *rest_file, 
+    char code, struct tm *time_info, int duration);
+void CreateTimestampedFile_QUIT(const char *directory, char *first_line, char *rest_file, char* res_msg);
 
 void WriteGameStart(FILE *game_file, int PLID, char *mode, const char *color_code, int time_limit);
-
+void calculate_blacks_and_whites(char *key, char *key_sol, int *nB, int *nW);
 int FindLastGame(char *PLID, char *fname);
 // int FindTopScores(SCORELIST *list);
 

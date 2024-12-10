@@ -93,13 +93,14 @@ char* start(char* arguments){
 void TRY(char* arguments, char *res_msg){
 
     char* PLID, *endptr, *solution_string, *first_line, *rest_file, *buffer;
-    char solution[4], date[11], time_str[9], code, color_code[4];
-    long int num_PLID, num_nt, start_time;
-    int duration, difference, created,nB, nW, charcount = 0;
+    char solution[5], color_code[5], dirpath[256];
+    long int num_PLID, start_time, num_nt; 
+    int duration, difference, created, *nB, *nW, charcount = 0;
     int  index = 0;
     size_t i, file_size;
     FILE *game_file;
     time_t raw_time;
+    DIR* DIR_player_games;
 
     for(i = 0; arguments[i]; i++) {
         if(arguments[i] == ' ') 
@@ -145,23 +146,26 @@ void TRY(char* arguments, char *res_msg){
             return;    
         }   
         if (index < 4) 
-            solution[index++] = toupper(color);
+            color_code[index++] = toupper(color);
         
         solution_string = strtok(NULL, " ");
         i++;
     }
-    solution[index] = '\0';
+    color_code[index] = '\0';
 
     num_nt = strtol(solution_string, &endptr, 10);
     
     created = CheckGameFileExists("GAMES", num_PLID);
-    if (created == 1)
-        return "RTR NOK\n";
-
-
-    game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "w+");
-    if (game_file == NULL)
-        return "RTR ERR\n";
+    if (created == 0){
+        strcat(res_msg,"RTR NOK\n");
+        return;
+    }
+    
+    game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
+    if (game_file == NULL){
+        strcat(res_msg,"RTR ERR\n");
+        return;
+    }
 
     fseek(game_file, 0, SEEK_END);
     file_size = ftell(game_file);
@@ -177,39 +181,48 @@ void TRY(char* arguments, char *res_msg){
     buffer[file_size] = '\0';
     first_line = strtok(buffer,"\n");
     rest_file = strtok(NULL,"");
-
     time(&raw_time);
-    sscanf(first_line, "%*6s %*1c %4s %d %*10s %*8s %ld", color_code, &duration, &start_time);
-
-    nB = 0;
-    nW = 0;
-    for (size_t i = 0; i < 4; i++){
-        if (color_code[i] == solution[i]){
-            nB++;
-            continue;
-        }
-        
-        for (size_t j = i+1; j < 4; j++){
-            if (solution[i] == )
-            {
-                /* code */
-            }
-            
-        }
-        
-        
-    }
-    
+    sscanf(first_line, "%*6s %*1c %4s %d %*10s %*8s %ld", solution, &duration, &start_time);
 
     difference = raw_time - start_time;
-    if(duration <= difference){
-        // ESCREVER PRIMEIRO NO FILE
-        fprintf(game_file,"T: %s %d %d %d",solution, nB, nW, difference); // File com o jogo
+    if(duration <= difference){ // JÁ PASSOU DO TEMPO DE JOGO
 
-        // MANDAR PARA UM FUNÇAO QUE VAI FECHAR O FILE E ENVIAR 
-        sprintf(res_msg, "RQT ETM %s\n", color_code);
+        DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
+        if (DIR_player_games == NULL){
+            strcat(res_msg,"RTR ERR\n");
+            return;
+        }
+        snprintf(dirpath, sizeof(dirpath), "GAMES/%ld", num_PLID);
+        CreateTimestampedFile_TRY(dirpath, first_line, rest_file, 'T', localtime(&raw_time), duration);
+        closedir(DIR_player_games);
+        sprintf(res_msg, "RTR ETM %s\n", solution);
+        removeFile(game_file,"GAMES/GAME_",num_PLID);
         return;
     }
+    printf("num_nt:%ld\nsolution:%s\ncolor:%s\n",num_nt, solution,color_code);
+    if(num_nt == 8 && strcmp(solution,color_code) != 0){ // JÁ NÃO HA MAIS JOGADAS
+
+        DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
+        if (DIR_player_games == NULL){
+            strcat(res_msg,"RTR ERR\n");
+            return;
+        }
+        snprintf(dirpath, sizeof(dirpath), "GAMES/%ld", num_PLID);
+        CreateTimestampedFile_TRY(dirpath, first_line, rest_file, 'F', localtime(&raw_time), difference);
+        closedir(DIR_player_games);
+        sprintf(res_msg, "RTR ENT %s\n", solution);
+        removeFile(game_file,"GAMES/GAME_",num_PLID);
+        return;
+    }
+    else if (strcmp(solution,color_code) == 0){
+        sprintf(res_msg, "RTR OK %ld %d %d\n", num_nt, 4, 0);
+    }
+
+        nB = 0;
+        nW = 0;
+
+        //calculate_blacks_and_whites(color_code, solution, nB, nW);
+        sprintf(res_msg, "RTR OK %ld %ls %ls\n", num_nt, nB, nW);
 
     return;
 }
@@ -220,10 +233,9 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
 
     char *endptr, *buffer, *first_line, *rest_file, *res_function_msg;
     int num_PLID, created;
-    char dirpath[256], filename[50];
+    char dirpath[256];
     DIR *DIR_player_games;
     FILE *game_file;
-    struct stat sb_games;
     size_t file_size;
 
     int charcount = 0;
@@ -266,22 +278,18 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
 
     snprintf(dirpath, sizeof(dirpath), "GAMES/%d", num_PLID);
     
-    if (stat(dirpath, &sb_games) == -1) //Path does not exist
-        mkdir(dirpath, 0777);
-    
-    if ((DIR_player_games = opendir(dirpath)) == NULL) {
-        perror ("Cannot open dir GAMES/<PLID>");
+    DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
+    if (DIR_player_games == NULL){
         strcat(res_msg,"RQT ERR\n");
         return;
     }
+    
     res_function_msg = (char*) calloc(20,1);
-    CreateTimestampedFile(dirpath,first_line,rest_file,res_function_msg);
+    CreateTimestampedFile_QUIT(dirpath,first_line, rest_file, res_function_msg);
     sprintf(res_msg, "RQT %s\n", res_function_msg);
 
     closedir(DIR_player_games);
-    snprintf(filename, sizeof(filename), "GAMES/GAME_%d.txt", num_PLID);
-    fclose(game_file);
-    remove(filename);
+    removeFile(game_file,"GAMES/GAME_",num_PLID);
     free(res_function_msg);
     return;
 }
