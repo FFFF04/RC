@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 
 #define MAX_TRIES 4 
 
@@ -100,7 +101,7 @@ void CreateTimestampedFile(const char *directory, char *first_line, char *rest_f
     struct tm *time_info;
     int duration,difference;
     long int start_time;
-    char date[11], time_str[9], code, color_code[5];
+    char date[11], time_str[9], code, color_code[4];
     // Get the current time
     time(&raw_time);
     time_info = localtime(&raw_time);
@@ -135,12 +136,8 @@ void CreateTimestampedFile(const char *directory, char *first_line, char *rest_f
         return;
     }
     
-    fprintf(file,"%s\n",first_line); // File com o jogo
-    if (rest_file != NULL)
-        fprintf(file,"%s",rest_file);
+    fprintf(file,"%s\n%s%s %s %d\n",first_line,rest_file, date, time_str, difference); // File com o jogo
     
-    fprintf(file, "%s %s %d\n", date, time_str, difference); // Ultima linha
-
     fflush(file);
     fclose(file);
     sprintf(res_msg, "OK %s",color_code);
@@ -378,6 +375,15 @@ void TCP(char* line, char* ip_address, char* port, char* msg) {
     int fd, n;
     ssize_t nbytes, nleft, nwritten, nread;
     struct sigaction act;
+    fd_set read_fds;
+    struct timeval timeout;
+    ssize_t bytes_read;
+
+    timeout.tv_sec = 20;
+    timeout.tv_usec = 0;
+
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
 
     memset(&act, 0, sizeof act);
     act.sa_handler = SIG_IGN;
@@ -427,19 +433,27 @@ void TCP(char* line, char* ip_address, char* port, char* msg) {
         line += nwritten;
     }
 
-    nleft = 1000; // Max buffer size for receiving
-    while (1) {
-        nread = read(fd, msg, nleft);
-        if (nread == -1) {
-            perror("read failed");
-            close(fd);
-            exit(EXIT_FAILURE);
-        } 
-        else if (nread == 0)
-            break;
+    int result = select(fd + 1, &read_fds, NULL, NULL, &timeout);
+    if (result == -1) {
+        perror("select");
+    } else if (result == 0) {
+        printf("TCP not working. Timeout reached. Server is Down!!!\n");
+    } 
+    else {
+        nleft = 1000; // Max buffer size for receiving
+        while (1) {
+            nread = read(fd, msg, nleft);
+            if (nread == -1) {
+                perror("read failed");
+                close(fd);
+                exit(EXIT_FAILURE);
+            } 
+            else if (nread == 0)
+                break;
 
-        nleft -= nread;
-        msg += nread;
+            nleft -= nread;
+            msg += nread;
+        }
     }
     close(fd);
 }

@@ -92,12 +92,14 @@ char* start(char* arguments){
 
 void TRY(char* arguments, char *res_msg){
 
-    char* PLID, *endptr, *solution_string;
-    char solution[4];
-    long int num_PLID, num_nt;
-    int charcount = 0;
+    char* PLID, *endptr, *solution_string, *first_line, *rest_file, *buffer;
+    char solution[4], date[11], time_str[9], code, color_code[4];
+    long int num_PLID, num_nt, start_time;
+    int duration, difference, created,nB, nW, charcount = 0;
     int  index = 0;
-    size_t i;
+    size_t i, file_size;
+    FILE *game_file;
+    time_t raw_time;
 
     for(i = 0; arguments[i]; i++) {
         if(arguments[i] == ' ') 
@@ -151,9 +153,64 @@ void TRY(char* arguments, char *res_msg){
     solution[index] = '\0';
 
     num_nt = strtol(solution_string, &endptr, 10);
-    printf("%s\n",solution);
-    printf("%ld\n",num_nt);
-    strcat(res_msg,"RTR OK\n");
+    
+    created = CheckGameFileExists("GAMES", num_PLID);
+    if (created == 1)
+        return "RTR NOK\n";
+
+
+    game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "w+");
+    if (game_file == NULL)
+        return "RTR ERR\n";
+
+    fseek(game_file, 0, SEEK_END);
+    file_size = ftell(game_file);
+    rewind(game_file);
+
+    buffer = (char *)malloc(file_size + 1);
+    if (fread(buffer, 1, file_size, game_file) != file_size) {
+        perror("fread");
+        free(buffer);
+        strcat(res_msg,"RTR ERR\n");
+        return;
+    }
+    buffer[file_size] = '\0';
+    first_line = strtok(buffer,"\n");
+    rest_file = strtok(NULL,"");
+
+    time(&raw_time);
+    sscanf(first_line, "%*6s %*1c %4s %d %*10s %*8s %ld", color_code, &duration, &start_time);
+
+    nB = 0;
+    nW = 0;
+    for (size_t i = 0; i < 4; i++){
+        if (color_code[i] == solution[i]){
+            nB++;
+            continue;
+        }
+        
+        for (size_t j = i+1; j < 4; j++){
+            if (solution[i] == )
+            {
+                /* code */
+            }
+            
+        }
+        
+        
+    }
+    
+
+    difference = raw_time - start_time;
+    if(duration <= difference){
+        // ESCREVER PRIMEIRO NO FILE
+        fprintf(game_file,"T: %s %d %d %d",solution, nB, nW, difference); // File com o jogo
+
+        // MANDAR PARA UM FUNÇAO QUE VAI FECHAR O FILE E ENVIAR 
+        sprintf(res_msg, "RQT ETM %s\n", color_code);
+        return;
+    }
+
     return;
 }
 
@@ -187,6 +244,10 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
         return;
     }
     game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
+    if (game_file == NULL){
+        strcat(res_msg,"RQT NOK\n");
+        return;
+    }
 
     fseek(game_file, 0, SEEK_END);
     file_size = ftell(game_file);
