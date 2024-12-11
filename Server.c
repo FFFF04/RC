@@ -92,11 +92,10 @@ char* start(char* arguments){
 
 void TRY(char* arguments, char *res_msg){
 
-    char* PLID, *endptr, *solution_string, *first_line, *rest_file, *buffer;
-    char solution[5], color_code[5], dirpath[256];
+    char* PLID, *endptr, *solution_string, *first_line, *rest_file, *buffer, *tries, *all_tries;
+    char mode, solution[5], color_code[5], dirpath[256], repeted_code[5];
     long int num_PLID, start_time, num_nt; 
-    int duration, difference, created, *nB, *nW, charcount = 0;
-    int  index = 0;
+    int duration, difference, created, index = 0, charcount = 0, nB = 0, nW = 0;
     size_t i, file_size;
     FILE *game_file;
     time_t raw_time;
@@ -181,8 +180,13 @@ void TRY(char* arguments, char *res_msg){
     buffer[file_size] = '\0';
     first_line = strtok(buffer,"\n");
     rest_file = strtok(NULL,"");
+    tries = (char *) calloc(256,1);
+    if (rest_file != NULL)
+        strcpy(tries,rest_file);
+    
     time(&raw_time);
-    sscanf(first_line, "%*6s %*1c %4s %d %*10s %*8s %ld", solution, &duration, &start_time);
+    sscanf(first_line, "%*6s %1c %4s %d %*10s %*8s %ld", &mode, solution, &duration, &start_time);
+
 
     difference = raw_time - start_time;
     if(duration <= difference){ // JÁ PASSOU DO TEMPO DE JOGO
@@ -199,7 +203,8 @@ void TRY(char* arguments, char *res_msg){
         removeFile(game_file,"GAMES/GAME_",num_PLID);
         return;
     }
-    printf("num_nt:%ld\nsolution:%s\ncolor:%s\n",num_nt, solution,color_code);
+
+
     if(num_nt == 8 && strcmp(solution,color_code) != 0){ // JÁ NÃO HA MAIS JOGADAS
 
         DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
@@ -214,17 +219,60 @@ void TRY(char* arguments, char *res_msg){
         removeFile(game_file,"GAMES/GAME_",num_PLID);
         return;
     }
-    else if (strcmp(solution,color_code) == 0){
-        sprintf(res_msg, "RTR OK %ld %d %d\n", num_nt, 4, 0);
+
+    tries = strtok(tries, "\n");
+    while (tries != NULL){ // CONFIRMAR SE NÃO HÁ JOGADA REPETIDA
+        
+        sscanf(tries, "T: %4s", repeted_code);
+
+        if (strcmp(repeted_code, color_code) == 0){
+            free(tries);
+            fclose(game_file);
+            sprintf(res_msg, "RTR DUP\n");
+            return;
+        }
+        tries = strtok(NULL, "\n");
+    }
+    free(tries);
+    calculate_blacks_and_whites(color_code, solution, &nB, &nW);
+    fprintf(game_file,"T: %s %d %d %d\n", color_code, nB, nW, difference); // GUARDA NO FILE
+    fflush(game_file);
+    
+    if (strcmp(solution,color_code) == 0){
+
+        DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
+        if (DIR_player_games == NULL){
+            strcat(res_msg,"RTR ERR\n");
+            return;
+        }
+        snprintf(dirpath, sizeof(dirpath), "GAMES/%ld", num_PLID);
+        all_tries = (char *) calloc(256,1);
+        if (rest_file != NULL)
+            sprintf(all_tries, "%sT: %s %d %d %d\n", rest_file ,color_code, nB, nW, difference);
+        else
+            sprintf(all_tries, "T: %s %d %d %d\n" ,color_code, nB, nW, difference);
+
+        CreateTimestampedFile_TRY(dirpath, first_line, all_tries, 'W', localtime(&raw_time), difference);
+        free(all_tries);
+        closedir(DIR_player_games);
+        removeFile(game_file,"GAMES/GAME_",num_PLID);
+        
+        // CALCULA O SCORE E GUARDA NA DIRETORIA SCORES
+        int score = CalculateScore(num_nt,difference,duration);
+        if (CreateFile_SCORE(num_PLID, score, localtime(&raw_time), color_code, num_nt, mode) == 1){
+            sprintf(res_msg, "RTR ERR\n");
+            return;
+        }
+        
+        sprintf(res_msg, "RTR OK %ld %d %d\n", num_nt, nB, nW);
+        return; 
     }
 
-        nB = 0;
-        nW = 0;
-
-        //calculate_blacks_and_whites(color_code, solution, nB, nW);
-        sprintf(res_msg, "RTR OK %ld %ls %ls\n", num_nt, nB, nW);
-
-    return;
+    else{
+        sprintf(res_msg, "RTR OK %ld %d %d\n", num_nt, nB, nW);
+        fclose(game_file);
+        return; 
+    }
 }
 
 

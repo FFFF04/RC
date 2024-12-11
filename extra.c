@@ -192,6 +192,9 @@ void CreateTimestampedFile_QUIT(const char *directory, char *first_line, char *r
 void calculate_blacks_and_whites(char *key, char *key_sol, int *nB, int *nW) {
     int check_color_key[4] = {0};
     int check_color_key_sol[4] = {0};
+    
+    *nB = 0;
+    *nW = 0;
 
     for (int i = 0; i < 4; i++) {
         if (key_sol[i] == key[i]) {
@@ -216,6 +219,49 @@ void calculate_blacks_and_whites(char *key, char *key_sol, int *nB, int *nW) {
             }
         }
     }
+}
+
+
+
+int CreateFile_SCORE(int num_PLID, int score, struct tm *time_info, char *color_code, long int num_nt, char mode) {
+    char filepath[512];
+    FILE *file;
+    const char *dir = "SCORES";
+    struct stat st = {0};
+    if (stat(dir, &st) == -1) {
+        if (mkdir(dir, 0777) != 0) {
+            perror("mkdir");
+            return 1;
+        }
+    }
+    snprintf(filepath, sizeof(filepath), "%s/%d_%d_%02d%02d%04d_%02d%02d%02d.txt",
+             dir,
+             score,
+             num_PLID,
+             time_info->tm_mday,
+             time_info->tm_mon + 1,
+             time_info->tm_year + 1900,
+             time_info->tm_hour,
+             time_info->tm_min,
+             time_info->tm_sec);
+
+    file = fopen(filepath, "w");
+    if (file == NULL) {
+        perror("fopen");
+        return 1;
+    }
+
+    // Write the content to the file
+    if (mode == 'P')
+        fprintf(file, "%d %d %s %ld PLAY\n", score, num_PLID, color_code, num_nt);
+    
+    else 
+        fprintf(file, "%d %d %s %ld DEBUG\n", score, num_PLID, color_code, num_nt);
+
+    fflush(file);
+    fclose(file);
+
+    return 0; // Success
 }
 
 
@@ -336,6 +382,8 @@ int CalculateScore(int rank, int duration, int max_duration) {
 char* getIPaddress()
 {
     char *ip_address;
+    // char hostbuffer[256];
+    // struct hostent *host_entry;
     struct ifaddrs *ifaddr, *tmp;
     if (getifaddrs(&ifaddr) == -1) {
         perror("getifaddrs");
@@ -344,6 +392,9 @@ char* getIPaddress()
 
     tmp = ifaddr;
 
+    // gethostname(hostbuffer, sizeof(hostbuffer));
+    // host_entry = gethostbyname(hostbuffer);
+    // ip_address = inet_ntoa(*((struct in_addr*)host_entry->h_addr_list[0]));
     while (tmp) {
         if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET){
             
