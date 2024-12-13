@@ -278,9 +278,10 @@ void TRY(char* arguments, char *res_msg){
 
 
 void quit(char* arguments, char *res_msg){ //UDP protocol
-
+    time_t raw_time;
+    long int start_time;
     char *endptr, *buffer, *first_line, *rest_file, *res_function_msg;
-    int num_PLID, created;
+    int num_PLID, created, duration, difference, game_end = 0;
     char dirpath[256];
     DIR *DIR_player_games;
     FILE *game_file;
@@ -305,9 +306,10 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     }
     game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
     if (game_file == NULL){
-        strcat(res_msg,"RQT NOK\n");
+        strcat(res_msg,"RQT ERR\n");
         return;
     }
+    
 
     fseek(game_file, 0, SEEK_END);
     file_size = ftell(game_file);
@@ -323,6 +325,19 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     buffer[file_size] = '\0';
     first_line = strtok(buffer,"\n");
     rest_file = strtok(NULL,"");
+    
+    time(&raw_time);
+
+    sscanf(first_line, "%*6s %*1c %*4s %d %*10s %*8s %ld", &duration, &start_time);
+
+
+    difference = raw_time - start_time;
+    if(duration <= difference){ 
+        strcat(res_msg, "RQT NOK\n");
+        game_end = 1;
+    }
+
+    
 
     snprintf(dirpath, sizeof(dirpath), "GAMES/%d", num_PLID);
     
@@ -334,7 +349,8 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     
     res_function_msg = (char*) calloc(20,1);
     CreateTimestampedFile_QUIT(dirpath,first_line, rest_file, res_function_msg);
-    sprintf(res_msg, "RQT %s\n", res_function_msg);
+    if(game_end == 0)
+        sprintf(res_msg, "RQT %s\n", res_function_msg);
 
     closedir(DIR_player_games);
     removeFile(game_file,"GAMES/GAME_",num_PLID);
