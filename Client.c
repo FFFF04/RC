@@ -6,11 +6,22 @@
 #include <string.h>
 #include <stddef.h>
 #include <signal.h>
+#include <unistd.h>
 
 
 char *port, *ip_address;
 char plId[6];
 int nT = 1;
+
+
+
+void handle_signal(int sig) {
+    if (sig == SIGINT) {
+        printf("\n");
+        EXIT();
+    }
+}
+
 
 
 void start(char* arguments){ //UDP protocol
@@ -193,7 +204,7 @@ void scoreboard(){ //TCP session
 
 
 
-void quit(int exit_status){ //UDP protocol
+void quit(){ //UDP protocol
 
     char* res_msg = (char*) calloc(15,1);
     char *protocol, *result;
@@ -223,15 +234,10 @@ void quit(int exit_status){ //UDP protocol
         result = strtok(NULL, "");
         printf("Solution: %s", result);
     }
-    else if (strcmp(protocol, "NOK\n") == 0){
+    else if (strcmp(protocol, "NOK\n") == 0)
         fprintf(stdout, "There is no ongoing game.\n");
-        if(exit_status == 1)
-            fprintf(stdout, "Leaving application anyway ...\n");
-    }
 
-    free(res_msg);
-    if(exit_status == 1)
-        exit(EXIT_SUCCESS);
+    free(res_msg);      
 }
 
 
@@ -241,7 +247,9 @@ void EXIT(){ //UDP protocol
     if (strcmp(plId,"") == 0)
         exit(EXIT_SUCCESS);
     
-    quit(1);
+    quit();
+    fprintf(stdout, "Leaving application. See you next time player!!!\n");
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -287,7 +295,7 @@ void debug(char *arguments){ //UDP protocol
 int main(int argc, char *argv[]){
     char *arguments;
     char input[128];
-    // struct sigaction act;
+    struct sigaction act;
 
     if (argc != 1 && argc != 3 && argc != 5){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -314,12 +322,12 @@ int main(int argc, char *argv[]){
 
     // FALTA ESTA PARTE
 
-    // memset(&act, 0, sizeof act);
-    // act.sa_handler = SIG_IGN;
-    // if (sigaction(SIGPIPE, &act, NULL) == -1) {
-    //     perror("sigaction failed");
-    //     exit(EXIT_FAILURE);
-    // }
+    memset(&act, 0, sizeof act);
+    act.sa_handler = &handle_signal;
+    if (sigaction(SIGINT, &act, NULL) == -1) {
+        perror("Sigaction failed");
+        exit(EXIT_FAILURE);
+    }
 
     while (1){ 
         fgets(input, sizeof(input), stdin);
@@ -340,7 +348,7 @@ int main(int argc, char *argv[]){
             scoreboard();
         }
         else if (strcmp(input,"quit\n") == 0){
-            quit(0);
+            quit();
         }
         else if (strcmp(input,"exit\n") == 0){
             EXIT();

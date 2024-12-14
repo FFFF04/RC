@@ -493,8 +493,7 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
 }
 
 
-
-/*Adicinonar aqui tambem time outs do lado do cliente e server*/
+// FALTA TIRAR AQUI SEG FAULT DEPOIS DE NAO CONSEGUIR IR AO SERVER
 void TCP(char* line, char* ip_address, char* port, char* msg) {
     struct addrinfo hints, *res;
     int fd, n;

@@ -81,7 +81,7 @@ void TRY(char* arguments, char *res_msg){
     char*first_line, *rest_file, *buffer, *tries, *all_tries;
     char mode, solution[5], color_code[5], dirpath[256], repeted_code[5], trash[5];
     long int num_PLID, start_time, num_nt; 
-    int duration, difference, created, charcount = 0, nB = 0, nW = 0;
+    int duration, difference, created, num_tries = 0, charcount = 0, nB = 0, nW = 0;
     size_t file_size;
     FILE *game_file;
     time_t raw_time;
@@ -197,6 +197,7 @@ void TRY(char* arguments, char *res_msg){
             return;
         }
         tries = strtok(NULL, "\n");
+        num_tries++;
     }
     free(tries);
     calculate_blacks_and_whites(color_code, solution, &nB, &nW);
@@ -240,6 +241,18 @@ void TRY(char* arguments, char *res_msg){
     }
 }
 
+
+
+void show_trials(char *arguments, char *res_msg){
+    
+
+}
+
+
+
+void scoreboard(char *res_msg){
+
+}
 
 
 void quit(char* arguments, char *res_msg){ //UDP protocol
@@ -385,9 +398,8 @@ int main(int argc, char *argv[]){
     struct sigaction act;
     int fd_tcp, fd_udp, errcode, select_fds;
     
-    fd_set inputs, testfds;
-    //enum {idle,busy} state;
-    char buffer[128];
+    fd_set testfds;
+    char *buffer = (char*) calloc(32, 1);
 
     if (argc <= 0 || argc > 4){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -475,12 +487,11 @@ int main(int argc, char *argv[]){
     if(listen(fd_tcp,5) == -1)/*error*/ 
         exit(EXIT_FAILURE);
 
-    FD_ZERO(&inputs); // Clear input mask
-    FD_SET(fd_udp,&inputs); // Set UDP channel on
-    FD_SET(fd_tcp,&inputs); // Set TCP channel on
+    FD_ZERO(&testfds); // Clear input mask
 
     while(1){
-        testfds = inputs; // Reload mask
+        FD_SET(fd_udp,&testfds); // Set UDP channel on
+        FD_SET(fd_tcp,&testfds); // Set TCP channel on
 
         select_fds = select(FD_SETSIZE,&testfds,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) NULL);
 
@@ -490,7 +501,54 @@ int main(int argc, char *argv[]){
                 exit(1);
             default:
                 if(FD_ISSET(fd_tcp,&testfds)){
-                    //printf("ola TCP");
+                    pid_t p;
+                    int newfd, n_read, n_write;
+
+                    if((newfd = accept(fd_tcp,(struct sockaddr*)&addr,&addrlen)) == -1)
+                        exit(EXIT_FAILURE);/*error*/
+
+                    p = fork();
+
+                    if(p < 0){
+                        perror("fork fail");
+                        exit(EXIT_FAILURE);
+                    }
+                    else if (p == 0){ // Child
+                        printf("Hello from Child!\n");
+                    
+                        addrlen = sizeof(addr);
+                        
+                        n_read = read(newfd, buffer, 32);
+                        if (n_read <= 0) {
+                            perror("Read failed");
+                            exit(EXIT_FAILURE);
+                        }                  
+                        
+                        command = strtok(buffer, " ");
+                        arguments = strtok(NULL, "");
+
+                        char *res_msg = (char*) calloc(30,1);
+                        if (strcmp(command,"STR") == 0)
+                            show_trials(arguments, res_msg);
+                        
+                        else if (strcmp(command,"SSB") == 0)
+                            scoreboard(res_msg);
+                        
+                        int dimention = strlen(res_msg);
+                        while( dimention >0){
+                            n_write = write(newfd, res_msg, dimention);
+                            if(n_write <=0){
+                                perror("Read failed");
+                                exit(EXIT_FAILURE);
+                            }                  
+
+                            dimention -= n_write; 
+                            res_msg += n_write;
+                        }
+                        free(res_msg);
+                        close(newfd); 
+                        exit(EXIT_SUCCESS);
+                    }
                 }
                 if(FD_ISSET(fd_udp,&testfds)){
 
@@ -525,11 +583,12 @@ int main(int argc, char *argv[]){
                         if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
                             exit(EXIT_FAILURE);
                     }
-                    memset(buffer, 0, sizeof(buffer));
                 }
+                memset(buffer, 0, 32);
         }
     }
     
+    free(buffer);
     freeaddrinfo(res_tcp);
     freeaddrinfo(res_udp);
     close(fd_udp);
