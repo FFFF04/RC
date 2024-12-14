@@ -19,7 +19,7 @@ void CreateTimestampedFile_QUIT(const char *directory, char *first_line, char *r
 void WriteGameStart(FILE *game_file, int PLID, char *mode, const char *color_code, int time_limit);
 void calculate_blacks_and_whites(char *key, char *key_sol, int *nB, int *nW);
 int CreateFile_SCORE(int num_PLID, int score, struct tm *time_info, char *color_code, long int num_nt, char mode);
-int FindLastGame(char *PLID, char *fname);
+int FindLastGame(int PLID, char *fname);
 // int FindTopScores(SCORELIST *list);
 int CalculateScore(int rank, int duration, int max_duration);
 

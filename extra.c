@@ -266,12 +266,12 @@ int CreateFile_SCORE(int num_PLID, int score, struct tm *time_info, char *color_
 
 
 
-int FindLastGame(char *PLID, char *fname) {
+int FindLastGame(int PLID, char *fname) {
     struct dirent **filelist;
     int nentries, found;
     char dirname[20];
 
-    sprintf(dirname, "GAMES/%s/", PLID);
+    sprintf(dirname, "GAMES/%d/", PLID);
 
     nentries = scandir(dirname, &filelist, 0, alphasort);
     found = 0;
@@ -281,7 +281,7 @@ int FindLastGame(char *PLID, char *fname) {
     } else {
         while (nentries--) {
             if (filelist[nentries]->d_name[0] != '.' && !found) {
-                sprintf(fname, "GAMES/%s/%s", PLID, filelist[nentries]->d_name);
+                sprintf(fname, "GAMES/%d/%s", PLID, filelist[nentries]->d_name);
                 found = 1;
             }
             free(filelist[nentries]);
@@ -498,14 +498,14 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
     int fd, n;
     ssize_t nbytes, nleft, nwritten, nread;
     struct sigaction act;
-    fd_set read_fds;
-    struct timeval timeout;
+    // fd_set read_fds;
+    // struct timeval timeout;
 
-    timeout.tv_sec = 20;
-    timeout.tv_usec = 0;
+    // timeout.tv_sec = 20;
+    // timeout.tv_usec = 0;
 
-    FD_ZERO(&read_fds);
-    FD_SET(fd, &read_fds);
+    // FD_ZERO(&read_fds);
+    // FD_SET(fd, &read_fds);
 
     memset(&act, 0, sizeof act);
     act.sa_handler = SIG_IGN;
@@ -555,29 +555,49 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
         line += nwritten;
     }
 
-    int result = select(fd + 1, &read_fds, NULL, NULL, &timeout);
-    if (result == -1) {
-        perror("select");
-    } else if (result == 0) {
-        printf("TCP not working. Timeout reached. Server is Down!!!\n");
-        return 1;
-    } 
-    else {
-        nleft = 2049; // Max buffer size for receiving
-        while (1) {
-            nread = read(fd, msg, nleft);
-            if (nread == -1) {
-                perror("read failed");
-                close(fd);
-                exit(EXIT_FAILURE);
-            } 
-            else if (nread == 0)
-                break;
-
-            nleft -= nread;
-            msg += nread;
+    nleft = 2049; // Max buffer size for receiving
+    while (nleft > 0) {
+        nread = read(fd, msg, nleft);
+        printf("msg:%s\n",msg);
+        if (nread == -1) {
+            perror("read failed");
+            close(fd);
+            exit(EXIT_FAILURE);
         }
+        printf("%ld\n",nread);
+        if (nread == 0){
+            printf("ola\n");
+            break;
+        }
+            
+        nleft -= nread;
+        msg += nread;
     }
     close(fd);
     return 0;
 }
+
+
+// int result = select(fd, &read_fds, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) &timeout);
+    // if (result == -1) {
+    //     perror("select");
+    // } else if (result == 0) {
+    //     printf("TCP not working. Timeout reached. Server is Down!!!\n");
+    //     return 1;
+    // } 
+    // else {
+    //     nleft = 2049; // Max buffer size for receiving
+    //     while (1) {
+    //         nread = read(fd, msg, nleft);
+    //         if (nread == -1) {
+    //             perror("read failed");
+    //             close(fd);
+    //             exit(EXIT_FAILURE);
+    //         } 
+    //         else if (nread == 0)
+    //             break;
+
+    //         nleft -= nread;
+    //         msg += nread;
+    //     }
+    // }

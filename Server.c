@@ -245,62 +245,80 @@ void TRY(char* arguments, char *res_msg){
 
 void show_trials(char *arguments, char *res_msg){
     
-    char *endptr, *buffer, *rest_file, *line;
-    char filename[24], color_code[5], Fdata[100];
-    int num_PLID, created, nW, nB, contador = 0;
+    char *endptr, *buffer, *first_line, *rest_file, *line;
+    char filename[24], color_code[5], Fdata[100], protocol_msg[9], last_line[25];
+    int num_PLID, created, nW, nB, duration, start_time, difference, contador = 0;
     size_t file_size;
     FILE* game_file;
-
+    time_t raw_time;
+    memset(Fdata, 0, sizeof(Fdata));
+    memset(protocol_msg, 0, sizeof(protocol_msg));
     num_PLID = strtol(arguments, &endptr, 10);
 
     created = CheckGameFileExists("GAMES", num_PLID);
     if (created == 0){ // Not created
-        // strcat(protocol_msg,"RST FIN");
-        return;
+        if (FindLastGame(num_PLID, filename) == 0){
+            strcat(res_msg,"RST NOK\n");
+            return;
+        }
+        game_file = fopen(filename, "r+");
+        if (game_file == NULL) {
+            strcat(res_msg,"RST NOK\n");
+            return;
+        }
+        strcat(protocol_msg, "RST FIN");
 
     }
-
     else{ // Created strcat(protocol_msg, "RST ACT");
-        sprintf(filename, "Game_%d.txt",num_PLID);
         game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
         if (game_file == NULL){
             strcat(res_msg,"RST NOK\n");
             return;
         }
-        
-        fseek(game_file, 0, SEEK_END);
-        file_size = ftell(game_file);
-        rewind(game_file);
+        strcat(protocol_msg, "RST ACT");
+    }
+    memset(filename, 0, sizeof(filename));
+    sprintf(filename, "STATE_%d.txt",num_PLID);
 
-        buffer = (char *)malloc(file_size + 1);
-        if (fread(buffer, 1, file_size, game_file) != file_size) {
-            perror("fread");
-            free(buffer);
-            strcat(res_msg,"RST NOK\n");
-            return;
-        }
-        buffer[file_size] = '\0';
-        strtok(buffer,"\n");
-        rest_file = strtok(NULL,"");
-        // size 12 * x (1-8)
-        if (rest_file == NULL){
-            sprintf(res_msg, "RTR ACT %s %d \n", filename, 1);
-            return;
-        }
+    fseek(game_file, 0, SEEK_END);
+    file_size = ftell(game_file);
+    rewind(game_file);
+
+    buffer = (char *)malloc(file_size + 1);
+    if (fread(buffer, 1, file_size, game_file) != file_size) {
+        perror("fread");
+        free(buffer);
+        strcat(res_msg,"RST NOK\n");
+        return;
+    }
+    buffer[file_size] = '\0';
+    first_line = strtok(buffer,"\n");
+    rest_file = strtok(NULL,"");
+    
+    time(&raw_time);
+    
+    sscanf(first_line, "%*6s %*1c %*4s %d %*10s %*8s %d", &duration, &start_time);
+    difference = raw_time - start_time;
+    if(duration <= difference)
+        difference = duration;
+    
+    sprintf(last_line,"-- Time left: %d --\n", duration - difference); // 21
+    if (rest_file == NULL)
+        sprintf(res_msg, "%s %s %d\n-- No transactions found --\n", protocol_msg, filename, 49);
+        
+    else{
         line = strtok(rest_file,"\n");
-        while (line != NULL){
-            char res_line[33];
-            sscanf(line, "T: %4s %d %d", color_code, &nB, &nW);
-            sprintf(res_line, "%c %c %c %c %d %d\n", color_code[0], color_code[1], color_code[2], color_code[3], nB, nW);
+        while (line != NULL && line[0] == 'T'){
+            char res_line[23];
+            sscanf(line, "%*2s %4s %d %d", color_code, &nB, &nW);
+            sprintf(res_line, "T: %s, nB: %d, nW: %d\n", color_code, nB, nW);
             strcat(Fdata,res_line);
             contador++;
             line = strtok(NULL,"\n");
         }
-        sprintf(res_msg,"RTR ACT %s %d %s\n", filename, 12*contador, Fdata);
-        return;
+        sprintf(res_msg,"%s %s %d\n%s", protocol_msg, filename, 23*contador + 21, Fdata);
     }
-
-
+    strcat(res_msg,last_line);
 }
 
 
@@ -586,21 +604,25 @@ int main(int argc, char *argv[]){
                         if (strcmp(command,"STR") == 0)
                             show_trials(arguments, res_msg);
                         
-                        else if (strcmp(command,"SSB") == 0)
-                            scoreboard(res_msg);
-                        printf("%s\n",res_msg);
+                        if (strcmp(command,"SSB\n") == 0)
+                            scoreboard(res_msg);                      
+
+                        char *ptr = &res_msg[0];
                         int dimention = strlen(res_msg);
-                        while( dimention >0){
-                            n_write = write(newfd, res_msg, dimention);
-                            if(n_write <=0){
-                                perror("Read failed");
+                        printf("%s",ptr);
+                        while(dimention > 0){
+                            n_write = write(newfd, ptr, dimention);
+                            if(n_write <= 0){
+                                perror("Write failed");
                                 exit(EXIT_FAILURE);
-                            }                  
+                            }
                             dimention -= n_write; 
-                            res_msg += n_write;
+                            ptr += n_write;
                         }
+
                         free(res_msg);
-                        close(newfd); 
+                        close(newfd);
+                        printf("Adeus kid\n");
                         exit(EXIT_SUCCESS);
                     }
                 }

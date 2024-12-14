@@ -18,6 +18,7 @@ int nT = 1;
 void handle_signal(int sig) {
     if (sig == SIGINT) {
         printf("\n");
+        exit(EXIT_SUCCESS);
         EXIT();
     }
 }
@@ -139,7 +140,7 @@ void show_trials(){ //TCP session
         printf("Maybe try again later?\n");
         return;
     }
-    
+    printf("%s\n",res_msg);
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
 
@@ -153,7 +154,7 @@ void show_trials(){ //TCP session
         fsize = strtok(NULL, " ");
         fdata = strtok(NULL, "");
 
-        FILE* fd = fopen(fname,"w");
+        FILE* fd = fopen(fname,"w+");
 
         ssize_t ret = fwrite(fdata, sizeof(char), strtol(fsize, &endptr, 10), fd);
         if (ret < 0) {
@@ -161,7 +162,7 @@ void show_trials(){ //TCP session
             exit(EXIT_FAILURE);
         }
 
-        printf("%s", fdata);
+        printf("Previous plays:\n%s", fdata);
         fclose(fd);  
     }
     free(res_msg);
@@ -203,7 +204,7 @@ void scoreboard(){ //TCP session
             exit(EXIT_FAILURE);
         }
 
-        printf("%s", fdata);
+        printf("ScoreBoard:\n%s", fdata);
         fclose(fd);  
     }
     free(res_msg);
