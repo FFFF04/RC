@@ -6,6 +6,18 @@
 #include <dirent.h>
 #include <time.h>
 
+#define MODEPLAY 1
+#define MODEDEBUG 2
+
+typedef struct {
+    int score[10];
+    int PLID[10];
+    char color_code[5][10];
+    int ntries[10];      
+    int mode[10];        
+    int nscores;        
+} SCORELIST;
+
 DIR *SearchAndCreateGameDir(const char *parent_dir, int PLID);
 void removeFile(FILE* game_file, char* directory, int num_PLID);
 int CheckGameFileExists(const char *directory, int PLID);
@@ -20,6 +32,7 @@ void WriteGameStart(FILE *game_file, int PLID, char *mode, const char *color_cod
 void calculate_blacks_and_whites(char *key, char *key_sol, int *nB, int *nW);
 int CreateFile_SCORE(int num_PLID, int score, struct tm *time_info, char *color_code, long int num_nt, char mode);
 int FindLastGame(int PLID, char *fname);
+int calculate_file_size(char *Fdata, char *last_line);
 // int FindTopScores(SCORELIST *list);
 int CalculateScore(int rank, int duration, int max_duration);
 

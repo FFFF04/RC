@@ -246,7 +246,7 @@ void TRY(char* arguments, char *res_msg){
 void show_trials(char *arguments, char *res_msg){
     
     char *endptr, *buffer, *first_line, *rest_file, *line;
-    char filename[24], color_code[5], Fdata[100], protocol_msg[9], last_line[25];
+    char filename[24], color_code[5], Fdata[254], protocol_msg[9], last_line[25];
     int num_PLID, created, nW, nB, duration, start_time, difference, contador = 0;
     size_t file_size;
     FILE* game_file;
@@ -269,7 +269,7 @@ void show_trials(char *arguments, char *res_msg){
         strcat(protocol_msg, "RST FIN");
 
     }
-    else{ // Created strcat(protocol_msg, "RST ACT");
+    else{// Created
         game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
         if (game_file == NULL){
             strcat(res_msg,"RST NOK\n");
@@ -303,8 +303,10 @@ void show_trials(char *arguments, char *res_msg){
         difference = duration;
     
     sprintf(last_line,"-- Time left: %d --\n", duration - difference); // 21
-    if (rest_file == NULL)
-        sprintf(res_msg, "%s %s %d\n-- No transactions found --\n", protocol_msg, filename, 49);
+    if (rest_file == NULL){
+        sprintf(Fdata, "-- No transactions found --\n");
+        sprintf(res_msg, "%s %s %d %s",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata);
+    }
         
     else{
         line = strtok(rest_file,"\n");
@@ -316,7 +318,7 @@ void show_trials(char *arguments, char *res_msg){
             contador++;
             line = strtok(NULL,"\n");
         }
-        sprintf(res_msg,"%s %s %d\n%s", protocol_msg, filename, 23*contador + 21, Fdata);
+        sprintf(res_msg,"%s %s %d %s", protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata);
     }
     strcat(res_msg,last_line);
 }
@@ -324,7 +326,7 @@ void show_trials(char *arguments, char *res_msg){
 
 
 void scoreboard(char *res_msg){
-    sprintf(res_msg,"ola");
+    
 }
 
 

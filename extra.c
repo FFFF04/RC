@@ -1,3 +1,4 @@
+#include "extra.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -294,6 +295,30 @@ int FindLastGame(int PLID, char *fname) {
 
 
 
+int calculate_file_size(char *Fdata, char *last_line){
+
+    int file_size;
+    FILE *file;
+
+    file = fopen("File_size_aux", "w+");
+    if (file == NULL) {
+        perror("fopen");
+        return -1;
+    }
+
+    fprintf(file,"%s\n%s",Fdata, last_line);
+
+    fseek(file, 0, SEEK_END);
+    file_size = ftell(file);
+
+    fclose(file);
+    remove("File_size_aux");
+    
+    return file_size;
+}
+
+
+
 int CalculateScore(int rank, int duration, int max_duration) {
 
     // Calculate rank factor (normalized between 0 and 1)
@@ -310,63 +335,63 @@ int CalculateScore(int rank, int duration, int max_duration) {
 
 
 
-// int FindTopScores(SCORELIST *list) {
-//     struct dirent **filelist;
-//     int nentries, ifile;
-//     char fname[300];
-//     FILE *fp;
-//     char mode[8];
+int FindTopScores(SCORELIST *list) {
+    struct dirent **filelist;
+    int nentries, ifile;
+    char fname[300];
+    FILE *fp;
+    char mode[8];
 
-//     // Scan the directory and sort files alphabetically
-//     nentries = scandir("SCORES/", &filelist, 0, alphasort);
+    // Scan the directory and sort files alphabetically
+    nentries = scandir("SCORES/", &filelist, 0, alphasort);
 
-//     // If no entries are found, return 0
-//     if (nentries <= 0) {
-//         return 0;
-//     } else {
-//         ifile = 0;
+    // If no entries are found, return 0
+    if (nentries <= 0) {
+        return 0;
+    } else {
+        ifile = 0;
 
-//         // Iterate through the entries from last to first
-//         while (nentries--) {
-//             // Check if the entry is not a hidden file and we haven't reached the top 10
-//             if (filelist[nentries]->d_name[0] != '.' && ifile < 10) {
-//                 // Construct the file path
-//                 sprintf(fname, "SCORES/%s", filelist[nentries]->d_name);
+        // Iterate through the entries from last to first
+        while (nentries--) {
+            // Check if the entry is not a hidden file and we haven't reached the top 10
+            if (filelist[nentries]->d_name[0] != '.' && ifile < 10) {
+                // Construct the file path
+                sprintf(fname, "SCORES/%s", filelist[nentries]->d_name);
 
-//                 // Open the file for reading
-//                 fp = fopen(fname, "r");
-//                 if (fp != NULL) {
-//                     // Read data from the file
-//                     fscanf(fp, "%d %s %s %d %s",
-//                            &list->score[ifile],
-//                            list->PLID[ifile],
-//                            list->colcode[ifile],
-//                            &list->ntries[ifile],
-//                            mode);
+                // Open the file for reading
+                fp = fopen(fname, "r");
+                if (fp != NULL) {
+                    // Read data from the file
+                    fscanf(fp, "%d %s %s %d %s",
+                           &list->score[ifile],
+                           list->PLID[ifile],
+                           list->color_code[ifile],
+                           &list->ntries[ifile],
+                           mode);
 
-//                     // Parse the game mode
-//                     if (!strcmp(mode, "PLAY"))
-//                         list->mode[ifile] = MODEPLAY;
-//                     if (!strcmp(mode, "DEBUG"))
-//                         list->mode[ifile] = MODEDEBUG;
+                    // Parse the game mode
+                    if (!strcmp(mode, "PLAY"))
+                        list->mode[ifile] = MODEPLAY;
+                    if (!strcmp(mode, "DEBUG"))
+                        list->mode[ifile] = MODEDEBUG;
 
-//                     // Close the file
-//                     fclose(fp);
-//                     ++ifile;
-//                 }
-//             }
-//             // Free the memory allocated for the entry
-//             free(filelist[nentries]);
-//         }
-//         // Free the file list
-//         free(filelist);
-//     }
+                    // Close the file
+                    fclose(fp);
+                    ++ifile;
+                }
+            }
+            // Free the memory allocated for the entry
+            free(filelist[nentries]);
+        }
+        // Free the file list
+        free(filelist);
+    }
 
-//     // Update the number of scores in the list
-//     list->nscores = ifile;
+    // Update the number of scores in the list
+    list->nscores = ifile;
 
-//     return ifile;
-// }
+    return ifile;
+}
 
 
 
@@ -540,8 +565,6 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
         exit(EXIT_FAILURE);
     }
 
-    freeaddrinfo(res);
-
     nbytes = strlen(line);
     nleft = nbytes;
     while (nleft > 0) {
@@ -573,6 +596,7 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
         nleft -= nread;
         msg += nread;
     }
+    freeaddrinfo(res);
     close(fd);
     return 0;
 }
