@@ -134,7 +134,11 @@ void show_trials(){ //TCP session
     char *protocol, *endptr;
 
     snprintf(msg, sizeof(msg), "STR %s\n", plId);
-    TCP(msg, ip_address, port, res_msg);
+
+    if(TCP(msg, ip_address, port, res_msg) == 1){
+        printf("Maybe try again later?\n");
+        return;
+    }
     
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
@@ -157,7 +161,7 @@ void show_trials(){ //TCP session
             exit(EXIT_FAILURE);
         }
 
-        fprintf(stdout, "%s", fdata);
+        printf("%s", fdata);
         fclose(fd);  
     }
     free(res_msg);
@@ -173,7 +177,10 @@ void scoreboard(){ //TCP session
     
     snprintf(msg, sizeof(msg), "SSB\n");
 
-    TCP(msg, ip_address, port, res_msg);
+    if(TCP(msg, ip_address, port, res_msg) == 1){
+        printf("Maybe try again later?\n");
+        return;
+    }
 
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
@@ -196,7 +203,7 @@ void scoreboard(){ //TCP session
             exit(EXIT_FAILURE);
         }
 
-        fprintf(stdout, "%s", fdata);
+        printf("%s", fdata);
         fclose(fd);  
     }
     free(res_msg);

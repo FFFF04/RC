@@ -493,8 +493,7 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
 }
 
 
-// FALTA TIRAR AQUI SEG FAULT DEPOIS DE NAO CONSEGUIR IR AO SERVER
-void TCP(char* line, char* ip_address, char* port, char* msg) {
+int TCP(char* line, char* ip_address, char* port, char* msg) {
     struct addrinfo hints, *res;
     int fd, n;
     ssize_t nbytes, nleft, nwritten, nread;
@@ -561,6 +560,7 @@ void TCP(char* line, char* ip_address, char* port, char* msg) {
         perror("select");
     } else if (result == 0) {
         printf("TCP not working. Timeout reached. Server is Down!!!\n");
+        return 1;
     } 
     else {
         nleft = 2049; // Max buffer size for receiving
@@ -579,4 +579,5 @@ void TCP(char* line, char* ip_address, char* port, char* msg) {
         }
     }
     close(fd);
+    return 0;
 }

@@ -79,7 +79,7 @@ char* start(char* arguments){
 void TRY(char* arguments, char *res_msg){
 
     char*first_line, *rest_file, *buffer, *tries, *all_tries;
-    char mode, solution[5], color_code[5], dirpath[256], repeted_code[5], trash[5];
+    char mode, solution[5], color_code[5], dirpath[256], repeted_code[5];
     long int num_PLID, start_time, num_nt; 
     int duration, difference, created, num_tries = 0, charcount = 0, nB = 0, nW = 0;
     size_t file_size;
@@ -96,8 +96,8 @@ void TRY(char* arguments, char *res_msg){
         return;    
     }
     
-    if (sscanf(arguments, "%6ld %c %c %c %c %ld%s", &num_PLID, &color_code[0], &color_code[1], 
-            &color_code[2], &color_code[3], &num_nt, trash) != 6){
+    if (sscanf(arguments, "%6ld %c %c %c %c %ld", &num_PLID, &color_code[0], &color_code[1], 
+            &color_code[2], &color_code[3], &num_nt) != 6){
         strcat(res_msg,"RTR ERR\n");
         return;
     }
@@ -245,14 +245,70 @@ void TRY(char* arguments, char *res_msg){
 
 void show_trials(char *arguments, char *res_msg){
     
+    char *endptr, *buffer, *rest_file, *line;
+    char filename[24], color_code[5], Fdata[100];
+    int num_PLID, created, nW, nB, contador = 0;
+    size_t file_size;
+    FILE* game_file;
+
+    num_PLID = strtol(arguments, &endptr, 10);
+
+    created = CheckGameFileExists("GAMES", num_PLID);
+    if (created == 0){ // Not created
+        // strcat(protocol_msg,"RST FIN");
+        return;
+
+    }
+
+    else{ // Created strcat(protocol_msg, "RST ACT");
+        sprintf(filename, "Game_%d.txt",num_PLID);
+        game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
+        if (game_file == NULL){
+            strcat(res_msg,"RST NOK\n");
+            return;
+        }
+        
+        fseek(game_file, 0, SEEK_END);
+        file_size = ftell(game_file);
+        rewind(game_file);
+
+        buffer = (char *)malloc(file_size + 1);
+        if (fread(buffer, 1, file_size, game_file) != file_size) {
+            perror("fread");
+            free(buffer);
+            strcat(res_msg,"RST NOK\n");
+            return;
+        }
+        buffer[file_size] = '\0';
+        strtok(buffer,"\n");
+        rest_file = strtok(NULL,"");
+        // size 12 * x (1-8)
+        if (rest_file == NULL){
+            sprintf(res_msg, "RTR ACT %s %d \n", filename, 1);
+            return;
+        }
+        line = strtok(rest_file,"\n");
+        while (line != NULL){
+            char res_line[33];
+            sscanf(line, "T: %4s %d %d", color_code, &nB, &nW);
+            sprintf(res_line, "%c %c %c %c %d %d\n", color_code[0], color_code[1], color_code[2], color_code[3], nB, nW);
+            strcat(Fdata,res_line);
+            contador++;
+            line = strtok(NULL,"\n");
+        }
+        sprintf(res_msg,"RTR ACT %s %d %s\n", filename, 12*contador, Fdata);
+        return;
+    }
+
 
 }
 
 
 
 void scoreboard(char *res_msg){
-
+    sprintf(res_msg,"ola");
 }
+
 
 
 void quit(char* arguments, char *res_msg){ //UDP protocol
@@ -514,8 +570,7 @@ int main(int argc, char *argv[]){
                         exit(EXIT_FAILURE);
                     }
                     else if (p == 0){ // Child
-                        printf("Hello from Child!\n");
-                    
+
                         addrlen = sizeof(addr);
                         
                         n_read = read(newfd, buffer, 32);
@@ -527,13 +582,13 @@ int main(int argc, char *argv[]){
                         command = strtok(buffer, " ");
                         arguments = strtok(NULL, "");
 
-                        char *res_msg = (char*) calloc(30,1);
+                        char *res_msg = (char*) calloc(2049,1);
                         if (strcmp(command,"STR") == 0)
                             show_trials(arguments, res_msg);
                         
                         else if (strcmp(command,"SSB") == 0)
                             scoreboard(res_msg);
-                        
+                        printf("%s\n",res_msg);
                         int dimention = strlen(res_msg);
                         while( dimention >0){
                             n_write = write(newfd, res_msg, dimention);
@@ -541,7 +596,6 @@ int main(int argc, char *argv[]){
                                 perror("Read failed");
                                 exit(EXIT_FAILURE);
                             }                  
-
                             dimention -= n_write; 
                             res_msg += n_write;
                         }
