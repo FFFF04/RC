@@ -33,46 +33,32 @@ char* start(char* arguments){
 
     srand((unsigned int) time(NULL));
 
-    char* PLID, *time, *endptr;
+    char trash[5], PLID[7], solution[4];
+    char *endptr;
     long int num_PLID, num_time;
-    char solution[4];
     FILE *game_file;
     int created = 0;    
     int charcount = 0;
 
-    for(int i = 0; arguments[i]; i++) {
-        if(arguments[i] == ' ') 
+    for (int i = 0; arguments[i]; i++) {
+        if (arguments[i] == ' ')
             charcount++;
     }
+
     if (charcount != 1)
         return "RSG ERR\n";
-    
 
-    PLID = strtok(arguments, " ");
-    time = strtok(NULL, " ");
-
-    if (strlen(PLID) != 6)
+    if (sscanf(arguments, "%6s %ld%s", PLID, &num_time, trash) != 2)
         return "RSG ERR\n";
     
-    for (size_t i = 0; i < strlen(PLID); i++){
-        if (isdigit(PLID[i]) == 0)
-            return "RSG ERR\n";
-    }
-    for (size_t i = 0; i < strlen(time)-1; i++){
-        if (isdigit(time[i]) == 0 )
-            return "RSG ERR\n";
-    }
-    
+    if (strlen(PLID) != 6 || strspn(PLID, "0123456789") != 6 || num_time <= 0 || num_time > 600)
+        return "RSG ERR\n";
+
     num_PLID = strtol(PLID, &endptr, 10);
-    num_time = strtol(time, &endptr, 10);
-    if (num_PLID == 0 || num_time == 0 || num_time > 600)
-        return "RSG ERR\n";
-    
 
     created = CheckGameFileExists("GAMES", num_PLID);
     if (created == 1)
         return "RSG NOK\n";
-
 
     game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "w+");
     if (game_file == NULL)
@@ -92,16 +78,16 @@ char* start(char* arguments){
 
 void TRY(char* arguments, char *res_msg){
 
-    char* PLID, *endptr, *solution_string, *first_line, *rest_file, *buffer, *tries, *all_tries;
-    char mode, solution[5], color_code[5], dirpath[256], repeted_code[5];
+    char*first_line, *rest_file, *buffer, *tries, *all_tries;
+    char mode, solution[5], color_code[5], dirpath[256], repeted_code[5], trash[5];
     long int num_PLID, start_time, num_nt; 
-    int duration, difference, created, index = 0, charcount = 0, nB = 0, nW = 0;
-    size_t i, file_size;
+    int duration, difference, created, charcount = 0, nB = 0, nW = 0;
+    size_t file_size;
     FILE *game_file;
     time_t raw_time;
     DIR* DIR_player_games;
 
-    for(i = 0; arguments[i]; i++) {
+    for(size_t i = 0; arguments[i]; i++) {
         if(arguments[i] == ' ') 
             charcount++;
     }
@@ -110,49 +96,28 @@ void TRY(char* arguments, char *res_msg){
         return;    
     }
     
-    PLID = strtok(arguments, " ");
-    if (strlen(PLID) != 6){ 
+    if (sscanf(arguments, "%6ld %c %c %c %c %ld%s", &num_PLID, &color_code[0], &color_code[1], 
+            &color_code[2], &color_code[3], &num_nt, trash) != 6){
         strcat(res_msg,"RTR ERR\n");
-        return;    
+        return;
     }
-    
-    for (i = 0; i < strlen(PLID); i++){
-        if (isdigit(PLID[i]) == 0){ 
-            strcat(res_msg,"RTR ERR\n");
-            return;    
-        }
-    }
-    
-    num_PLID = strtol(PLID, &endptr, 10);
-    if (num_PLID == 0){ 
-        strcat(res_msg,"RTR ERR\n");
-        return;    
-    }
-    solution_string = strtok(NULL, " ");
-    i = 0;
-    while (i <= 3) {
-        char color = solution_string[0];
-        int valid = 0;
+    color_code[4] = '\0';
 
-        for (int j = 0; j < 6; j++) {
-            if (toupper(color) == colors[j]) {
-                valid = 1;
-                break;
+    for (size_t i = 0; i != 4; i++) {
+        if (color_code[i] != ' ') {
+            int valid = 0;
+            for (size_t j = 0; j < 6; j++) {
+                if (color_code[i] == colors[j]) {
+                    valid = 1;
+                    break;
+                }
+            }
+            if (valid == 0){
+                strcat(res_msg,"RTR ERR\n");
+                return;
             }
         }
-        if (!valid){ 
-            strcat(res_msg,"RTR ERR\n");
-            return;    
-        }   
-        if (index < 4) 
-            color_code[index++] = toupper(color);
-        
-        solution_string = strtok(NULL, " ");
-        i++;
     }
-    color_code[index] = '\0';
-
-    num_nt = strtol(solution_string, &endptr, 10);
     
     created = CheckGameFileExists("GAMES", num_PLID);
     if (created == 0){
@@ -297,7 +262,7 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
         strcat(res_msg,"RQT ERR\n");
         return;
     }
-
+    
     num_PLID = strtol(arguments, &endptr, 10);
     created = CheckGameFileExists("GAMES", num_PLID);
     if (created == 0){
@@ -310,7 +275,6 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
         return;
     }
     
-
     fseek(game_file, 0, SEEK_END);
     file_size = ftell(game_file);
     rewind(game_file);
@@ -330,14 +294,11 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
 
     sscanf(first_line, "%*6s %*1c %*4s %d %*10s %*8s %ld", &duration, &start_time);
 
-
     difference = raw_time - start_time;
     if(duration <= difference){ 
         strcat(res_msg, "RQT NOK\n");
         game_end = 1;
     }
-
-    
 
     snprintf(dirpath, sizeof(dirpath), "GAMES/%d", num_PLID);
     
@@ -362,13 +323,12 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
 
 char* debug(char* arguments){
 
-    char *PLID, *time, *endptr, *solution_string, *solution_string_less_n;
-    char solution[4];
+    char *endptr;
+    char solution[5], PLID[7];
     long int num_PLID, num_time;
     FILE *game_file;
     int created = 0;    
     int charcount = 0;
-    int index = 0;
 
     for(int i = 0; arguments[i]; i++) {
         if(arguments[i] == ' ')
@@ -377,46 +337,30 @@ char* debug(char* arguments){
     if (charcount != 5)
         return "RDB ERR\n";
 
-    PLID = strtok(arguments, " ");
-    time = strtok(NULL, " ");
-    if (strlen(PLID) != 6)
+    if (sscanf(arguments, "%6s %ld %c %c %c %c", PLID, &num_time, &solution[0], &solution[1], 
+            &solution[2], &solution[3]) != 6)
         return "RDB ERR\n";
-    
-    for (size_t i = 0; i < strlen(PLID); i++){
-        if (isdigit(PLID[i]) == 0)
-            return "RDB ERR\n";
-    }
-    for (size_t i = 0; i < strlen(time); i++){
-        if (isdigit(time[i]) == 0)
-            return "RDB ERR\n";
-    }
-    
+    solution[4] = '\0';
+
+    if (strlen(PLID) != 6 || strspn(PLID, "0123456789") != 6 || num_time <= 0 || num_time > 600)
+        return "RDB ERR\n";
+
     num_PLID = strtol(PLID, &endptr, 10);
-    num_time = strtol(time, &endptr, 10);
-    if (num_PLID == 0 || num_time == 0 || num_time > 600)
-        return "RDB ERR\n";
 
-    solution_string = strtok(NULL, "\n");
-    solution_string_less_n = strtok(solution_string, " ");
-    while (solution_string_less_n != NULL) {
-
-        char color = solution_string_less_n[0];
-        int valid = 0;
-
-        for (int i = 0; i < 6; i++) {
-            if (toupper(color) == colors[i]) {
-                valid = 1;
-                break;
+    for (size_t i = 0; i != 4; i++) {
+        if (solution[i] != ' ') {
+            int valid = 0;
+            for (size_t j = 0; j < 6; j++) {
+                if (solution[i] == colors[j]) {
+                    valid = 1;
+                    break;
+                }
             }
+            if (valid == 0)
+                return "RDB ERR\n";
         }
-        if (!valid) 
-            return "RDB ERR\n";        
-        if (index < 4) 
-            solution[index++] = toupper(color);
-        
-        solution_string_less_n = strtok(NULL, " ");
     }
-    solution[index] = '\0';
+
     created = CheckGameFileExists("GAMES", num_PLID);
     if (created == 1)
         return "RDB NOK\n";
