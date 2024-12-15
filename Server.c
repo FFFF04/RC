@@ -78,7 +78,7 @@ char* start(char* arguments){
 // FALTA AINDA A PARTE DO INV !!!!!
 void TRY(char* arguments, char *res_msg){
 
-    char*first_line, *rest_file, *buffer, *tries, *all_tries;
+    char*first_line, *rest_file, *buffer, *tries, *all_tries, *line_try;
     char mode, solution[5], color_code[5], dirpath[256], repeted_code[5];
     long int num_PLID, start_time, num_nt; 
     int duration, difference, created, num_tries = 0, charcount = 0, nB = 0, nW = 0;
@@ -147,8 +147,9 @@ void TRY(char* arguments, char *res_msg){
     rest_file = strtok(NULL,"");
     tries = (char *) calloc(256,1);
     if (rest_file != NULL)
-        strcpy(tries,rest_file);
+        memcpy(tries, rest_file, 256);
     
+
     time(&raw_time);
     sscanf(first_line, "%*6s %1c %4s %d %*10s %*8s %ld", &mode, solution, &duration, &start_time);
 
@@ -158,11 +159,15 @@ void TRY(char* arguments, char *res_msg){
 
         DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
         if (DIR_player_games == NULL){
+            free(buffer);
+            free(tries);
             strcat(res_msg,"RTR ERR\n");
             return;
         }
         snprintf(dirpath, sizeof(dirpath), "GAMES/%ld", num_PLID);
         CreateTimestampedFile_TRY(dirpath, first_line, rest_file, 'T', localtime(&raw_time), duration);
+        free(buffer);
+        free(tries);
         closedir(DIR_player_games);
         sprintf(res_msg, "RTR ETM %s\n", solution);
         removeFile(game_file,"GAMES/GAME_",num_PLID);
@@ -175,28 +180,33 @@ void TRY(char* arguments, char *res_msg){
         DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
         if (DIR_player_games == NULL){
             strcat(res_msg,"RTR ERR\n");
+            free(buffer);
+            free(tries);
             return;
         }
         snprintf(dirpath, sizeof(dirpath), "GAMES/%ld", num_PLID);
         CreateTimestampedFile_TRY(dirpath, first_line, rest_file, 'F', localtime(&raw_time), difference);
+        free(buffer);
+        free(tries);
         closedir(DIR_player_games);
         sprintf(res_msg, "RTR ENT %s\n", solution);
         removeFile(game_file,"GAMES/GAME_",num_PLID);
         return;
     }
 
-    tries = strtok(tries, "\n");
-    while (tries != NULL){ // CONFIRMAR SE NÃO HÁ JOGADA REPETIDA
+    line_try = strtok(tries, "\n");
+    while (line_try != NULL){ // CONFIRMAR SE NÃO HÁ JOGADA REPETIDA
         
-        sscanf(tries, "T: %4s", repeted_code);
+        sscanf(line_try, "T: %4s", repeted_code);
 
         if (strcmp(repeted_code, color_code) == 0){
             free(tries);
+            free(buffer);
             fclose(game_file);
             sprintf(res_msg, "RTR DUP\n");
             return;
         }
-        tries = strtok(NULL, "\n");
+        line_try = strtok(NULL, "\n");
         num_tries++;
     }
     free(tries);
@@ -209,19 +219,21 @@ void TRY(char* arguments, char *res_msg){
         DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
         if (DIR_player_games == NULL){
             strcat(res_msg,"RTR ERR\n");
+                free(buffer);
             return;
         }
         snprintf(dirpath, sizeof(dirpath), "GAMES/%ld", num_PLID);
         all_tries = (char *) calloc(256,1);
         if (rest_file != NULL)
-            sprintf(all_tries, "%sT: %s %d %d %d\n", rest_file ,color_code, nB, nW, difference);
+            sprintf(all_tries, "%sT: %s %d %d %d\n", rest_file, color_code, nB, nW, difference);
         else
             sprintf(all_tries, "T: %s %d %d %d\n" ,color_code, nB, nW, difference);
 
         CreateTimestampedFile_TRY(dirpath, first_line, all_tries, 'W', localtime(&raw_time), difference);
+        free(buffer);
         free(all_tries);
         closedir(DIR_player_games);
-        removeFile(game_file,"GAMES/GAME_",num_PLID);
+        removeFile(game_file,"GAMES/GAME_", num_PLID);
         
         // CALCULA O SCORE E GUARDA NA DIRETORIA SCORES
         int score = CalculateScore(num_nt,difference,duration);
@@ -237,6 +249,7 @@ void TRY(char* arguments, char *res_msg){
     else{
         sprintf(res_msg, "RTR OK %ld %d %d\n", num_nt, nB, nW);
         fclose(game_file);
+        free(buffer);
         return; 
     }
 }
@@ -295,7 +308,6 @@ void show_trials(char *arguments, char *res_msg){
     buffer[file_size] = '\0';
     first_line = strtok(buffer,"\n");
     rest_file = strtok(NULL,"");
-    
     time(&raw_time);
     
     sscanf(first_line, "%*6s %*1c %*4s %d %*10s %*8s %d", &duration, &start_time);
@@ -329,6 +341,7 @@ void show_trials(char *arguments, char *res_msg){
 
     sprintf(res_msg, "%s %s %d %s",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata);
     strcat(res_msg,last_line);
+    free(buffer);
 }
 
 
@@ -345,15 +358,15 @@ void scoreboard(char *res_msg){
         return;
     }
 
-    sprintf(Fdata, "--TOP 10 SCORES--\n\n SCORE PLAYER CODE N_TRIALS MODE\n");
+    sprintf(Fdata, "--------------TOP 10 SCORES--------------\n\n   SCORE   PLAYER   CODE   N_TRIALS   MODE\n");
 
     for (int i = 0; i < n_scores; i++){
         if (List->mode[i] == 1)
-            sprintf(line_score,"%d - %d   %s   %s   %d   PLAY\n", 
+            sprintf(line_score,"%d - %d    %s   %s       %d      PLAY\n", 
                 i + 1, List->score[i], List->PLID[i], List->color_code[i], List->ntries[i]);
         
         else
-            sprintf(line_score,"%d - %d   %s   %s   %d   DEBUG\n", 
+            sprintf(line_score,"%d - %d    %s   %s       %d      DEBUG\n", 
                 i + 1, List->score[i], List->PLID[i], List->color_code[i], List->ntries[i]);
             
         strcat(Fdata,line_score);
@@ -417,7 +430,6 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     buffer[file_size] = '\0';
     first_line = strtok(buffer,"\n");
     rest_file = strtok(NULL,"");
-    
     time(&raw_time);
 
     sscanf(first_line, "%*6s %*1c %*4s %d %*10s %*8s %ld", &duration, &start_time);
@@ -433,6 +445,7 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
     if (DIR_player_games == NULL){
         strcat(res_msg,"RQT ERR\n");
+        free(buffer);
         return;
     }
     
@@ -444,6 +457,7 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     closedir(DIR_player_games);
     removeFile(game_file,"GAMES/GAME_",num_PLID);
     free(res_function_msg);
+    free(buffer);
     return;
 }
 
@@ -514,7 +528,7 @@ int main(int argc, char *argv[]){
     int fd_tcp, fd_udp, errcode, select_fds;
     
     fd_set testfds;
-    char *buffer = (char*) calloc(32, 1);
+    char *buffer = (char*) calloc(128, 1);
 
     if (argc <= 0 || argc > 4){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -594,11 +608,14 @@ int main(int argc, char *argv[]){
     errcode=getaddrinfo(NULL, port, &hints_tcp, &res_tcp);
     if(errcode != 0)/*error*/
         exit(EXIT_FAILURE);
+    int true = 1;
+    setsockopt(fd_tcp,SOL_SOCKET,SO_REUSEADDR,&true,sizeof(int));
     if(bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1)/*error*/{
         perror("bind");
         exit(EXIT_FAILURE);
     }
-    
+    freeaddrinfo(res_tcp);
+    freeaddrinfo(res_udp);
     if(listen(fd_tcp,5) == -1)/*error*/ 
         exit(EXIT_FAILURE);
 
@@ -657,9 +674,11 @@ int main(int argc, char *argv[]){
                             dimention -= n_write; 
                             ptr += n_write;
                         }
-
+                        free(buffer);
                         free(res_msg);
                         close(newfd);
+                        closedir(DIR_games);
+                        closedir(DIR_scores);
                         exit(EXIT_SUCCESS);
                     }
                 }
@@ -702,8 +721,6 @@ int main(int argc, char *argv[]){
     }
     
     free(buffer);
-    freeaddrinfo(res_tcp);
-    freeaddrinfo(res_udp);
     close(fd_udp);
     close(fd_tcp);
 

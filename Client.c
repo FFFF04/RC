@@ -161,7 +161,13 @@ void show_trials(){ //TCP session
             exit(EXIT_FAILURE);
         }
 
-        printf("%s", fdata);
+        ret = fwrite(fdata, sizeof(char), strtol(fsize, &endptr, 10), stdout);
+        if (ret < 0) {
+            fprintf(stderr, "Write failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // printf("%s", fdata);
         fclose(fd);  
     }
     free(res_msg);

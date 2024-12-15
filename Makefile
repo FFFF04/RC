@@ -15,3 +15,4 @@ $(CLIENT):
 clean:
 	rm -f $(SERVER) $(CLIENT)
 	rm -rf GAMES SCORES
+	rm -rf *.txt

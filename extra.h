@@ -11,8 +11,8 @@
 
 typedef struct {
     int score[10];
-    char PLID[10][6];
-    char color_code[10][4];
+    char PLID[10][7];
+    char color_code[10][5];
     int ntries[10];
     int mode[10];
 } SCORELIST;
