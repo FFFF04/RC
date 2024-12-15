@@ -75,7 +75,7 @@ char* start(char* arguments){
 }
 
 
-
+// FALTA AINDA A PARTE DO INV !!!!!
 void TRY(char* arguments, char *res_msg){
 
     char*first_line, *rest_file, *buffer, *tries, *all_tries;
@@ -246,7 +246,7 @@ void TRY(char* arguments, char *res_msg){
 void show_trials(char *arguments, char *res_msg){
     
     char *endptr, *buffer, *first_line, *rest_file, *line;
-    char filename[24], color_code[5], Fdata[254], protocol_msg[9], last_line[25];
+    char filename[24], color_code[5], Fdata[2049], protocol_msg[9], last_line[64];
     int num_PLID, created, nW, nB, duration, start_time, difference, contador = 0;
     size_t file_size;
     FILE* game_file;
@@ -267,7 +267,7 @@ void show_trials(char *arguments, char *res_msg){
             return;
         }
         strcat(protocol_msg, "RST FIN");
-
+        strcat(Fdata,"Plays of last Game:\n");
     }
     else{// Created
         game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
@@ -276,6 +276,7 @@ void show_trials(char *arguments, char *res_msg){
             return;
         }
         strcat(protocol_msg, "RST ACT");
+        strcat(Fdata,"Previous plays:\n");
     }
     memset(filename, 0, sizeof(filename));
     sprintf(filename, "STATE_%d.txt",num_PLID);
@@ -302,14 +303,20 @@ void show_trials(char *arguments, char *res_msg){
     if(duration <= difference)
         difference = duration;
     
-    sprintf(last_line,"-- Time left: %d --\n", duration - difference); // 21
     if (rest_file == NULL){
-        sprintf(Fdata, "-- No transactions found --\n");
-        sprintf(res_msg, "%s %s %d %s",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata);
+        strcat(Fdata, "-- No transactions found --\n");
+        sprintf(last_line,"-- Time left: %d --\n", duration - difference);
     }
         
     else{
         line = strtok(rest_file,"\n");
+        if(strcmp(protocol_msg, "RST FIN") == 0 && line != NULL && line[0] != 'T'){
+            strcat(Fdata, "-- No transactions found --\n");
+            sprintf(last_line,"-- Duration of Last Game: %d --\n", difference);
+        }
+        else
+            sprintf(last_line,"-- Time left: %d --\n", duration - difference);
+        
         while (line != NULL && line[0] == 'T'){
             char res_line[23];
             sscanf(line, "%*2s %4s %d %d", color_code, &nB, &nW);
@@ -318,15 +325,47 @@ void show_trials(char *arguments, char *res_msg){
             contador++;
             line = strtok(NULL,"\n");
         }
-        sprintf(res_msg,"%s %s %d %s", protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata);
     }
+
+    sprintf(res_msg, "%s %s %d %s",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata);
     strcat(res_msg,last_line);
 }
 
 
 
 void scoreboard(char *res_msg){
-    
+    SCORELIST *List = (SCORELIST*) malloc(sizeof(SCORELIST));
+    time_t raw_time;
+    char line_score[128], Fdata[1500], filename[50];
+
+    int n_scores = FindTopScores(List);
+    if (n_scores == 0){
+        strcat(res_msg,"RSS EMPTY\n");
+        free(List);
+        return;
+    }
+
+    sprintf(Fdata, "--TOP 10 SCORES--\n\n SCORE PLAYER CODE N_TRIALS MODE\n");
+
+    for (int i = 0; i < n_scores; i++){
+        if (List->mode[i] == 1)
+            sprintf(line_score,"%d - %d   %s   %s   %d   PLAY\n", 
+                i + 1, List->score[i], List->PLID[i], List->color_code[i], List->ntries[i]);
+        
+        else
+            sprintf(line_score,"%d - %d   %s   %s   %d   DEBUG\n", 
+                i + 1, List->score[i], List->PLID[i], List->color_code[i], List->ntries[i]);
+            
+        strcat(Fdata,line_score);
+
+        memset(line_score,0, sizeof(line_score));
+    }
+    time(&raw_time);
+    sprintf(filename, "TOPSCORES_%d.txt",raw_time);
+
+    sprintf(res_msg,"RSS EMPTY %s %d %s", filename, calculate_file_size(Fdata, ""), Fdata);
+
+    free(List);
 }
 
 
@@ -579,17 +618,16 @@ int main(int argc, char *argv[]){
                 if(FD_ISSET(fd_tcp,&testfds)){
                     pid_t p;
                     int newfd, n_read, n_write;
-
-                    if((newfd = accept(fd_tcp,(struct sockaddr*)&addr,&addrlen)) == -1)
-                        exit(EXIT_FAILURE);/*error*/
-
                     p = fork();
-
+                    
                     if(p < 0){
                         perror("fork fail");
                         exit(EXIT_FAILURE);
                     }
                     else if (p == 0){ // Child
+                        
+                        if((newfd = accept(fd_tcp,(struct sockaddr*)&addr,&addrlen)) == -1)
+                        exit(EXIT_FAILURE);/*error*/
 
                         addrlen = sizeof(addr);
                         
@@ -611,7 +649,6 @@ int main(int argc, char *argv[]){
 
                         char *ptr = &res_msg[0];
                         int dimention = strlen(res_msg);
-                        printf("%s",ptr);
                         while(dimention > 0){
                             n_write = write(newfd, ptr, dimention);
                             if(n_write <= 0){
@@ -624,7 +661,6 @@ int main(int argc, char *argv[]){
 
                         free(res_msg);
                         close(newfd);
-                        printf("Adeus kid\n");
                         exit(EXIT_SUCCESS);
                     }
                 }

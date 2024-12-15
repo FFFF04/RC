@@ -140,7 +140,6 @@ void show_trials(){ //TCP session
         printf("Maybe try again later?\n");
         return;
     }
-    printf("%s\n",res_msg);
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
 
@@ -162,7 +161,7 @@ void show_trials(){ //TCP session
             exit(EXIT_FAILURE);
         }
 
-        printf("Previous plays:\n%s", fdata);
+        printf("%s", fdata);
         fclose(fd);  
     }
     free(res_msg);
@@ -204,7 +203,7 @@ void scoreboard(){ //TCP session
             exit(EXIT_FAILURE);
         }
 
-        printf("ScoreBoard:\n%s", fdata);
+        printf("%s", fdata);
         fclose(fd);  
     }
     free(res_msg);
@@ -212,7 +211,7 @@ void scoreboard(){ //TCP session
 
 
 
-void quit(){ //UDP protocol
+int quit(){ //UDP protocol
 
     char* res_msg = (char*) calloc(15,1);
     char *protocol, *result;
@@ -220,14 +219,14 @@ void quit(){ //UDP protocol
     
     if (strcmp(plId,"") == 0){
         fprintf(stdout, "There is no ongoing game.\n");
-        return;
+        return 0;
     }
 
     snprintf(msg, sizeof(msg), "QUT %s\n",plId);
     
     if (UDP(msg,ip_address,port,res_msg) == 1){
         free(res_msg);
-        return;
+        return 1;
     }
     
     strtok(res_msg," ");
@@ -236,7 +235,7 @@ void quit(){ //UDP protocol
     if(strcmp(protocol, "ERR\n") == 0){
         fprintf(stdout, "Error while quitting the game.\n");
         free(res_msg);
-        return;
+        return 1;
     }
     else if (strcmp(protocol,"OK") == 0){
         result = strtok(NULL, "");
@@ -245,7 +244,8 @@ void quit(){ //UDP protocol
     else if (strcmp(protocol, "NOK\n") == 0)
         fprintf(stdout, "There is no ongoing game.\n");
 
-    free(res_msg);      
+    free(res_msg);
+    return 0;    
 }
 
 
@@ -255,9 +255,11 @@ void EXIT(){ //UDP protocol
     if (strcmp(plId,"") == 0)
         exit(EXIT_SUCCESS);
     
-    quit();
-    fprintf(stdout, "Leaving application. See you next time player!!!\n");
-    exit(EXIT_SUCCESS);
+    if (quit() == 0){
+        fprintf(stdout, "Leaving application. See you next time player!!!\n");
+        exit(EXIT_SUCCESS);
+    }
+
 }
 
 

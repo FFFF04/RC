@@ -11,11 +11,10 @@
 
 typedef struct {
     int score[10];
-    int PLID[10];
-    char color_code[5][10];
-    int ntries[10];      
-    int mode[10];        
-    int nscores;        
+    char PLID[10][6];
+    char color_code[10][4];
+    int ntries[10];
+    int mode[10];
 } SCORELIST;
 
 DIR *SearchAndCreateGameDir(const char *parent_dir, int PLID);
@@ -33,7 +32,7 @@ void calculate_blacks_and_whites(char *key, char *key_sol, int *nB, int *nW);
 int CreateFile_SCORE(int num_PLID, int score, struct tm *time_info, char *color_code, long int num_nt, char mode);
 int FindLastGame(int PLID, char *fname);
 int calculate_file_size(char *Fdata, char *last_line);
-// int FindTopScores(SCORELIST *list);
+int FindTopScores(SCORELIST *list);
 int CalculateScore(int rank, int duration, int max_duration);
 
 char* getIPaddress();

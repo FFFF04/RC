@@ -299,14 +299,14 @@ int calculate_file_size(char *Fdata, char *last_line){
 
     int file_size;
     FILE *file;
-
+    
     file = fopen("File_size_aux", "w+");
     if (file == NULL) {
         perror("fopen");
         return -1;
     }
 
-    fprintf(file,"%s\n%s",Fdata, last_line);
+    fprintf(file,"%s%s",Fdata, last_line);
 
     fseek(file, 0, SEEK_END);
     file_size = ftell(file);
@@ -344,11 +344,11 @@ int FindTopScores(SCORELIST *list) {
 
     // Scan the directory and sort files alphabetically
     nentries = scandir("SCORES/", &filelist, 0, alphasort);
-
     // If no entries are found, return 0
-    if (nentries <= 0) {
+    if (nentries <= 0)
         return 0;
-    } else {
+
+    else{
         ifile = 0;
 
         // Iterate through the entries from last to first
@@ -388,8 +388,6 @@ int FindTopScores(SCORELIST *list) {
     }
 
     // Update the number of scores in the list
-    list->nscores = ifile;
-
     return ifile;
 }
 
@@ -581,15 +579,12 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
     nleft = 2049; // Max buffer size for receiving
     while (nleft > 0) {
         nread = read(fd, msg, nleft);
-        printf("msg:%s\n",msg);
         if (nread == -1) {
             perror("read failed");
             close(fd);
             exit(EXIT_FAILURE);
         }
-        printf("%ld\n",nread);
         if (nread == 0){
-            printf("ola\n");
             break;
         }
             
