@@ -18,7 +18,7 @@ int nT = 1;
 void handle_signal(int sig) {
     if (sig == SIGINT) {
         printf("\n");
-        exit(EXIT_SUCCESS);
+        // exit(EXIT_SUCCESS);
         EXIT();
     }
 }

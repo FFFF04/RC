@@ -646,7 +646,6 @@ int main(int argc, char *argv[]){
                         
                         if (strcmp(command,"SSB\n") == 0)
                             scoreboard(res_msg);                      
-
                         char *ptr = &res_msg[0];
                         int dimention = strlen(res_msg);
                         while(dimention > 0){
