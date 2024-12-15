@@ -361,7 +361,7 @@ void scoreboard(char *res_msg){
         memset(line_score,0, sizeof(line_score));
     }
     time(&raw_time);
-    sprintf(filename, "TOPSCORES_%d.txt",raw_time);
+    sprintf(filename, "TOPSCORES_%ld.txt",raw_time);
 
     sprintf(res_msg,"RSS EMPTY %s %d %s", filename, calculate_file_size(Fdata, ""), Fdata);
 
