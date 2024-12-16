@@ -377,7 +377,7 @@ void scoreboard(char *res_msg){
     time(&raw_time);
     sprintf(filename, "TOPSCORES_%ld.txt",raw_time);
 
-    sprintf(res_msg,"RSS EMPTY %s %d %s", filename, calculate_file_size(Fdata, ""), Fdata);
+    sprintf(res_msg,"RSS OK %s %d %s", filename, calculate_file_size(Fdata, ""), Fdata);
 
     free(List);
 }
