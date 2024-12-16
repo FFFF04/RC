@@ -225,7 +225,7 @@ void CreateTimestampedFile_QUIT(const char *directory, char *first_line, char *r
     
     fflush(file);
     fclose(file);
-    sprintf(res_msg, "OK %s", color_code);
+    sprintf(res_msg, "OK %c %c %c %c", color_code[0], color_code[1], color_code[2], color_code[3]);
     return;
 }
 
