@@ -1,0 +1,15 @@
+./Client -n tejo.tecnico.ulisboa.pt -p 58011
+start 106067 500
+quit
+
+try Y Y Y Y
+try G G G G
+try G G G G
+try G Y G G
+try G G G Y
+try G G Y G
+try Y G G G
+try G R G G
+try G G R G
+
+exit

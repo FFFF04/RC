@@ -1,0 +1,6 @@
+debug 100001 600 Y Y Y Y
+try Y Y Y Y
+debug 100002 600 Y Y Y Y
+try Y Y Y Y
+sb
+exit
