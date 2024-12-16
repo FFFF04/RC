@@ -53,15 +53,55 @@ void removeFile(FILE* game_file, char *directory ,int num_PLID){
 }
 
 
-int CheckGameFileExists(const char *directory, int PLID) {
-    char filepath[256];
+int CheckGameFileExists(const char *directory, int PLID, int protect) {
+    char filepath[256], dirpath[256], *buffer, *first_line, *rest_file;
     struct stat sb;
+    FILE* game_file;
+    size_t file_size;
+    int duration;
+    long int difference, start_time;
+    time_t raw_time;
+
 
     snprintf(filepath, sizeof(filepath), "%s/GAME_%d.txt", directory, PLID);
 
-    if (stat(filepath, &sb) == 0)
+    if (stat(filepath, &sb) == 0){
+
+        if(protect == 1){
+            game_file = CreateAndOpenGameFile("GAMES/GAME_", PLID, "r+");
+            fseek(game_file, 0, SEEK_END);
+            file_size = ftell(game_file);
+            rewind(game_file);
+
+            buffer = (char *)malloc(file_size + 1);
+            if (fread(buffer, 1, file_size, game_file) != file_size) {
+                perror("fread");
+                free(buffer);
+                return -1;
+            }
+            buffer[file_size] = '\0';
+            first_line = strtok(buffer,"\n");
+            rest_file = strtok(NULL,"");
+            time(&raw_time);
+
+            sscanf(first_line, "%*6s %*1c %*4s %d %*10s %*8s %ld", &duration, &start_time);
+
+            difference = raw_time - start_time;
+            if(duration <= difference){ 
+                snprintf(dirpath, sizeof(dirpath), "GAMES/%d", PLID);
+        
+                DIR* DIR_player_games = SearchAndCreateGameDir("GAMES/", PLID);
+
+                CreateTimestampedFile_TRY(dirpath, first_line, rest_file, 'T', localtime(&raw_time), duration);
+                closedir(DIR_player_games);
+                removeFile(game_file,"GAMES/GAME_",PLID);
+                free(buffer);
+                return 0;
+            }
+            free(buffer);
+        }
         return 1; // File exists
-    
+    }
     return 0; // File does not exist
 }
 

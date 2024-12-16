@@ -56,7 +56,8 @@ char* start(char* arguments){
 
     num_PLID = strtol(PLID, &endptr, 10);
 
-    created = CheckGameFileExists("GAMES", num_PLID);
+    created = CheckGameFileExists("GAMES", num_PLID, 1);
+
     if (created == 1)
         return "RSG NOK\n";
 
@@ -119,7 +120,7 @@ void TRY(char* arguments, char *res_msg){
         }
     }
     
-    created = CheckGameFileExists("GAMES", num_PLID);
+    created = CheckGameFileExists("GAMES", num_PLID, 0);
     if (created == 0){
         strcat(res_msg,"RTR NOK\n");
         return;
@@ -268,7 +269,7 @@ void show_trials(char *arguments, char *res_msg){
     memset(protocol_msg, 0, sizeof(protocol_msg));
     num_PLID = strtol(arguments, &endptr, 10);
 
-    created = CheckGameFileExists("GAMES", num_PLID);
+    created = CheckGameFileExists("GAMES", num_PLID, 1);
     if (created == 0){ // Not created
         if (FindLastGame(num_PLID, filename) == 0){
             strcat(res_msg,"RST NOK\n");
@@ -405,7 +406,7 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     }
     
     num_PLID = strtol(arguments, &endptr, 10);
-    created = CheckGameFileExists("GAMES", num_PLID);
+    created = CheckGameFileExists("GAMES", num_PLID, 0);
     if (created == 0){
         strcat(res_msg,"RQT NOK\n");
         return;
@@ -503,7 +504,7 @@ char* debug(char* arguments){
         }
     }
 
-    created = CheckGameFileExists("GAMES", num_PLID);
+    created = CheckGameFileExists("GAMES", num_PLID,1);
     if (created == 1)
         return "RDB NOK\n";
 

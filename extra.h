@@ -19,7 +19,7 @@ typedef struct {
 
 DIR *SearchAndCreateGameDir(const char *parent_dir, int PLID);
 void removeFile(FILE* game_file, char* directory, int num_PLID);
-int CheckGameFileExists(const char *directory, int PLID);
+int CheckGameFileExists(const char *directory, int PLID, int protect);
 
 FILE *CreateAndOpenGameFile(const char *directory, int PLID, char* open_type);
 
