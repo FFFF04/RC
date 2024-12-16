@@ -644,17 +644,17 @@ int main(int argc, char *argv[]){
                     }
                     else if (p == 0){ // Child
                         
-                        if((newfd = accept(fd_tcp,(struct sockaddr*)&addr,&addrlen)) == -1)
-                        exit(EXIT_FAILURE);/*error*/
-
                         addrlen = sizeof(addr);
-                        
+
+                        if((newfd = accept(fd_tcp,(struct sockaddr*)&addr,&addrlen)) == -1)
+                            exit(EXIT_FAILURE);/*error*/
+                       
                         n_read = read(newfd, buffer, 32);
                         if (n_read <= 0) {
                             perror("Read failed");
                             exit(EXIT_FAILURE);
-                        }                  
-                        
+                        }
+
                         command = strtok(buffer, " ");
                         arguments = strtok(NULL, "");
 
