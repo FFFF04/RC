@@ -359,7 +359,7 @@ void scoreboard(char *res_msg){
         return;
     }
 
-    sprintf(Fdata, "--------------TOP 10 SCORES--------------\n\n   SCORE   PLAYER   CODE   N_TRIALS   MODE\n");
+    sprintf(Fdata, "\n--------------TOP 10 SCORES--------------\n\n   SCORE   PLAYER   CODE   N_TRIALS   MODE\n");
 
     for (int i = 0; i < n_scores; i++){
         if (List->mode[i] == 1)
