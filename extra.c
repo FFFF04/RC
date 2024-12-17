@@ -89,7 +89,7 @@ int CheckGameFileExists(const char *directory, int PLID, int protect) {
             difference = raw_time - start_time;
             if(duration <= difference){ 
                 snprintf(dirpath, sizeof(dirpath), "GAMES/%d", PLID);
-                
+
                 DIR* DIR_player_games = SearchAndCreateGameDir("GAMES/", PLID);
 
                 CreateTimestampedFile_TRY(dirpath, first_line, rest_file, 'T', localtime(&raw_time), duration);
@@ -340,21 +340,27 @@ int FindLastGame(int PLID, char *fname) {
 int calculate_file_size(char *Fdata, char *last_line){
 
     int file_size;
-    FILE *file;
+    // FILE *file;
     
-    file = fopen("File_size_aux", "w+");
-    if (file == NULL) {
-        perror("fopen");
-        return -1;
-    }
+    // file = fopen("File_size_aux", "w+");
+    // if (file == NULL) {
+    //     perror("fopen");
+    //     return -1;
+    // }
 
-    fprintf(file,"%s%s",Fdata, last_line);
+    // fprintf(file,"%s%s",Fdata, last_line);
 
-    fseek(file, 0, SEEK_END);
-    file_size = ftell(file);
+    // fseek(file, 0, SEEK_END);
+    // file_size = ftell(file);
 
-    fclose(file);
-    remove("File_size_aux");
+    // fclose(file);
+    // remove("File_size_aux");
+
+    char buffer[2049];
+    strcat(buffer,Fdata);
+    strcat(buffer,last_line);
+
+    file_size = strlen(buffer);
     
     return file_size;
 }
