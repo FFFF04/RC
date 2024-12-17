@@ -261,7 +261,7 @@ void show_trials(char *arguments, char *res_msg){
     
     char *endptr, *buffer, *first_line, *rest_file, *line;
     char filename[24], color_code[5], Fdata[2049], protocol_msg[9], last_line[64];
-    int num_PLID, created, nW, nB, duration, start_time, difference, contador = 0;
+    int num_PLID, created, nW, nB, duration, start_time, difference;
     size_t file_size;
     FILE* game_file;
     time_t raw_time;
@@ -336,13 +336,11 @@ void show_trials(char *arguments, char *res_msg){
             sscanf(line, "%*2s %4s %d %d", color_code, &nB, &nW);
             sprintf(res_line, "T: %s, nB: %d, nW: %d\n", color_code, nB, nW);
             strcat(Fdata,res_line);
-            contador++;
             line = strtok(NULL,"\n");
         }
     }
 
-    sprintf(res_msg, "%s %s %d %s",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata);
-    strcat(res_msg,last_line);
+    sprintf(res_msg, "%s %s %d %s%s",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata, last_line);
     free(buffer);
 }
 
