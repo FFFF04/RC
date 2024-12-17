@@ -323,10 +323,11 @@ void show_trials(char *arguments, char *res_msg){
         
     else{
         line = strtok(rest_file,"\n");
-        if(strcmp(protocol_msg, "RST FIN") == 0 && line != NULL && line[0] != 'T'){
+        if(strcmp(protocol_msg, "RST FIN") == 0 && line != NULL && line[0] != 'T')
             strcat(Fdata, "-- No transactions found --\n");
+        
+        if (strcmp(protocol_msg, "RST FIN") == 0)
             sprintf(last_line,"-- Duration of Last Game: %d --\n", difference);
-        }
         else
             sprintf(last_line,"-- Time left: %d --\n", duration - difference);
         
@@ -358,8 +359,9 @@ void scoreboard(char *res_msg){
         free(List);
         return;
     }
-
-    sprintf(Fdata, "\n--------------TOP 10 SCORES--------------\n\n   SCORE   PLAYER   CODE   N_TRIALS   MODE\n");
+    
+    time(&raw_time);
+    sprintf(Fdata, "--------------TOP 10 SCORES--------------\n   SCORE   PLAYER   CODE   N_TRIALS   MODE\n");
 
     for (int i = 0; i < n_scores; i++){
         if (List->mode[i] == 1)
@@ -374,7 +376,7 @@ void scoreboard(char *res_msg){
 
         memset(line_score,0, sizeof(line_score));
     }
-    time(&raw_time);
+    
     sprintf(filename, "TOPSCORES_%ld.txt",raw_time);
 
     sprintf(res_msg,"RSS OK %s %d %s", filename, calculate_file_size(Fdata, ""), Fdata);
@@ -664,6 +666,7 @@ int main(int argc, char *argv[]){
                         
                         if (strcmp(command,"SSB\n") == 0)
                             scoreboard(res_msg);                      
+                        
                         char *ptr = &res_msg[0];
                         int dimention = strlen(res_msg);
                         while(dimention > 0){
