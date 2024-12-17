@@ -616,7 +616,7 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
         nread = read(fd, msg, nleft);
         if (nread == 0)
             break;
-        else {
+        if (nread < 0) {
             perror("read failed");
             freeaddrinfo(res);
             close(fd);

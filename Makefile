@@ -7,10 +7,10 @@ CLIENT = Client
 all: $(SERVER) $(CLIENT)
 
 $(SERVER):
-	$(CC) $(CFLAGS) Server.c extra.c -o $(SERVER)
+	$(CC) $(CFLAGS) extra.c Server.c -o $(SERVER)
 
 $(CLIENT):
-	$(CC) $(CFLAGS) Client.c extra.c -o $(CLIENT)
+	$(CC) $(CFLAGS) extra.c Client.c -o $(CLIENT)
 
 clean:
 	rm -f $(SERVER) $(CLIENT)

@@ -167,7 +167,6 @@ void show_trials(){ //TCP session
             exit(EXIT_FAILURE);
         }
 
-        // printf("%s", fdata);
         fclose(fd);  
     }
     free(res_msg);
