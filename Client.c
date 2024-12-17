@@ -14,11 +14,17 @@ char plId[6];
 int nT = 1;
 
 
+void reset_para(){
+    // memset(plId,0,sizeof(plId));
+    nT = 1;
+    return;
+}
+
+
 
 void handle_signal(int sig) {
     if (sig == SIGINT) {
         printf("\n");
-        // exit(EXIT_SUCCESS);
         EXIT();
     }
 }
@@ -32,7 +38,6 @@ void start(char* arguments){ //UDP protocol
     char msg[17];
     
     memset(plId,0,sizeof(plId));
-    nT = 1;
 
     snprintf(msg, sizeof(msg), "SNG %s", arguments);
     
@@ -94,15 +99,17 @@ void TRY(char* arguments){ //UDP protocol
         }
         //Imprimimos sempre mesmo que ganhemos acho que fica bem :)
         fprintf(stdout, "Guess result: nB: %d, nW: %d, Num of Tries left: %d\n",nB,nW, 8 - nT);
-        if(nB == 4)
+        if(nB == 4){
             fprintf(stdout, "YOU WON. Guesses needed: %d. GOOD JOB!!!!\n",nT);
+            reset_para();
+        }
     }
     else if (strcmp(protocol,"DUP\n") == 0){
         fprintf(stdout, "Repeated guess. Try again!\n");
         nT--; 
     }
     else if (strcmp(protocol,"INV") == 0){ // Acho que é so escrever mensagem.
-        // Escrever tipo problemas a enviar para o servidor por favor reenviar o try anterio assim uma cena
+        fprintf(stdout, "Repeat the last 'TRY'!\n");
         nT--;
     }
     else if (strcmp(protocol,"NOK\n") == 0){
@@ -111,11 +118,13 @@ void TRY(char* arguments){ //UDP protocol
     }
     else if (strcmp(protocol,"ENT") == 0){
         fprintf(stdout, "YOU LOST!! No more attempts available.\n");
-        printf("Solution: %sBetter luck next time.\n", strtok(NULL, ""));
+        printf("Solu,tion: %sBetter luck next time.\n", strtok(NULL, ""));
+        reset_para();
     }
     else if (strcmp(protocol,"ETM") == 0){
         fprintf(stdout, "YOU LOST!! Time ended.\n");
         printf("Solution: %sBetter luck next time.\n", strtok(NULL, ""));
+        reset_para();
     }
     else if (strcmp(protocol,"ERR\n") == 0){
         fprintf(stdout, "Incorrect Arguments in fuction 'try'\n"); //acho que dá para escrever este erro de maneira mais "normal"
@@ -133,7 +142,7 @@ void show_trials(){ //TCP session
     char* res_msg = (char*) calloc(2049,1);
     char msg[12];
     char *protocol, *endptr;
-
+    
     snprintf(msg, sizeof(msg), "STR %s\n", plId);
 
     if(TCP(msg, ip_address, port, res_msg) == 1){
@@ -166,7 +175,9 @@ void show_trials(){ //TCP session
             fprintf(stderr, "Write failed\n");
             exit(EXIT_FAILURE);
         }
-
+        if (strcmp(protocol,"FIN") == 0)
+            reset_para();
+        
         fclose(fd);  
     }
     free(res_msg);
@@ -276,7 +287,6 @@ void debug(char *arguments){ //UDP protocol
     char msg[24];
 
     memset(plId,0,sizeof(plId));
-    nT = 1;
 
     snprintf(msg, sizeof(msg), "DBG %s", arguments);
     

@@ -76,7 +76,7 @@ char* start(char* arguments){
 }
 
 
-// FALTA AINDA A PARTE DO INV !!!!!
+
 void TRY(char* arguments, char *res_msg){
 
     char*first_line, *rest_file, *buffer, *tries, *all_tries, *line_try;
@@ -198,24 +198,40 @@ void TRY(char* arguments, char *res_msg){
     line_try = strtok(tries, "\n");
     while (line_try != NULL){ // CONFIRMAR SE NÃO HÁ JOGADA REPETIDA
         
-        sscanf(line_try, "T: %4s", repeted_code);
+        sscanf(line_try, "T: %4s %d %d", repeted_code, &nB, &nW);
 
-        if (strcmp(repeted_code, color_code) == 0){
+        if (strcmp(repeted_code, color_code) == 0 && num_nt != num_tries){
             free(tries);
             free(buffer);
             fclose(game_file);
             sprintf(res_msg, "RTR DUP\n");
             return;
         }
+        if (num_nt == num_tries){
+            num_tries = -1;
+            if (strcmp(repeted_code, color_code) != 0){
+                free(tries);
+                free(buffer);
+                fclose(game_file);
+                sprintf(res_msg, "RTR INV\n");
+                return;
+            }
+            sprintf(res_msg, "RTR OK %ld %d %d\n", num_nt, nB, nW);
+            fclose(game_file);
+            free(buffer);
+            return;
+        }
+        
         line_try = strtok(NULL, "\n");
         num_tries++;
     }
     free(tries);
+
     calculate_blacks_and_whites(color_code, solution, &nB, &nW);
     fprintf(game_file,"T: %s %d %d %d\n", color_code, nB, nW, difference); // GUARDA NO FILE
     fflush(game_file);
     
-    if (strcmp(solution,color_code) == 0){
+    if (strcmp(solution,color_code) == 0){ // WE WON
 
         DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
         if (DIR_player_games == NULL){
@@ -228,7 +244,7 @@ void TRY(char* arguments, char *res_msg){
         if (rest_file != NULL)
             sprintf(all_tries, "%sT: %s %d %d %d\n", rest_file, color_code, nB, nW, difference);
         else
-            sprintf(all_tries, "T: %s %d %d %d\n" ,color_code, nB, nW, difference);
+            sprintf(all_tries, "T: %s %d %d %d\n", color_code, nB, nW, difference);
 
         CreateTimestampedFile_TRY(dirpath, first_line, all_tries, 'W', localtime(&raw_time), difference);
         free(buffer);
@@ -247,7 +263,7 @@ void TRY(char* arguments, char *res_msg){
         return; 
     }
 
-    else{
+    else{ // NORMAL PLAY
         sprintf(res_msg, "RTR OK %ld %d %d\n", num_nt, nB, nW);
         fclose(game_file);
         free(buffer);
@@ -377,7 +393,7 @@ void scoreboard(char *res_msg){
     
     sprintf(filename, "TOPSCORES_%ld.txt",raw_time);
 
-    sprintf(res_msg,"RSS OK %s %d %s", filename, calculate_file_size(Fdata, ""), Fdata);
+    sprintf(res_msg,"RSS OK %s %d %s\n", filename, calculate_file_size(Fdata, ""), Fdata);
 
     free(List);
 }
@@ -575,11 +591,6 @@ int main(int argc, char *argv[]){
     act.sa_handler=SIG_IGN;
     if(sigaction(SIGPIPE,&act,NULL) == -1)/*error*/
         exit(EXIT_FAILURE);
-
-    struct sigaction sa;
-    sa.sa_handler = SIG_IGN; // Automatically reap child processes
-    sa.sa_flags = SA_RESTART | SA_NOCLDWAIT;
-    sigaction(SIGCHLD, &sa, NULL);
 
 
 

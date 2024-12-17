@@ -89,7 +89,7 @@ int CheckGameFileExists(const char *directory, int PLID, int protect) {
             difference = raw_time - start_time;
             if(duration <= difference){ 
                 snprintf(dirpath, sizeof(dirpath), "GAMES/%d", PLID);
-        
+                
                 DIR* DIR_player_games = SearchAndCreateGameDir("GAMES/", PLID);
 
                 CreateTimestampedFile_TRY(dirpath, first_line, rest_file, 'T', localtime(&raw_time), duration);
