@@ -529,7 +529,6 @@ int main(int argc, char *argv[]){
     int fd_tcp, fd_udp, errcode, select_fds;
     
     fd_set testfds;
-    char *buffer = (char*) calloc(128, 1);
 
     if (argc <= 0 || argc > 4){
         fprintf(stderr, "Incorrect Arguments\n");
@@ -576,6 +575,11 @@ int main(int argc, char *argv[]){
     act.sa_handler=SIG_IGN;
     if(sigaction(SIGPIPE,&act,NULL) == -1)/*error*/
         exit(EXIT_FAILURE);
+
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN; // Automatically reap child processes
+    sa.sa_flags = SA_RESTART | SA_NOCLDWAIT;
+    sigaction(SIGCHLD, &sa, NULL);
 
 
 
@@ -644,11 +648,16 @@ int main(int argc, char *argv[]){
                     }
                     else if (p == 0){ // Child
                         
+                        char *buffer = (char*) calloc(128, 1);
+
                         addrlen = sizeof(addr);
 
                         if((newfd = accept(fd_tcp,(struct sockaddr*)&addr,&addrlen)) == -1)
                             exit(EXIT_FAILURE);/*error*/
-                       
+                        
+                        close(fd_tcp);
+                        close(fd_udp);
+
                         n_read = read(newfd, buffer, 32);
                         if (n_read <= 0) {
                             perror("Read failed");
@@ -685,6 +694,8 @@ int main(int argc, char *argv[]){
                     }
                 }
                 if(FD_ISSET(fd_udp,&testfds)){
+                    
+                    char *buffer = (char*) calloc(128, 1);
 
                     addrlen=sizeof(addr);
                     if(recvfrom(fd_udp,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
@@ -717,12 +728,11 @@ int main(int argc, char *argv[]){
                         if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
                             exit(EXIT_FAILURE);
                     }
+                    free(buffer);
                 }
-                memset(buffer, 0, 32);
         }
     }
     
-    free(buffer);
     close(fd_udp);
     close(fd_tcp);
 
