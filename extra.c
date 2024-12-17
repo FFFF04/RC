@@ -357,6 +357,7 @@ int calculate_file_size(char *Fdata, char *last_line){
     // remove("File_size_aux");
 
     char buffer[2049];
+    memset(buffer,'\0',1);
     strcat(buffer,Fdata);
     strcat(buffer,last_line);
 
