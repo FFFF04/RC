@@ -1,5 +1,5 @@
 #include "Server.h"
-#include "extra.h"
+#include "extra_server.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -15,11 +15,12 @@
 #include <time.h>
 #include <dirent.h>
 
+
+
 int verbose_mode = 0; // 0 desativado; 1 ativado
 FILE *fptr;
 char colors[6] = {'R', 'G', 'B', 'Y', 'O', 'P'};
 long int clock_my = 0;
-
 DIR *DIR_games;
 struct dirent *dp_games;
 DIR *DIR_scores;
@@ -36,14 +37,8 @@ char* start(char* arguments){
     long int num_PLID, num_time;
     FILE *game_file;
     int created = 0;    
-    int charcount = 0;
 
-    for (int i = 0; arguments[i]; i++) {
-        if (arguments[i] == ' ')
-            charcount++;
-    }
-
-    if (charcount != 1)
+    if (arguments_number(arguments) != 1)
         return "RSG ERR\n";
 
     if (sscanf(arguments, "%6s %ld%s", PLID, &num_time, trash) != 2)
@@ -80,17 +75,13 @@ void TRY(char* arguments, char *res_msg){
     char*first_line, *rest_file, *buffer, *tries, *all_tries, *line_try;
     char mode, solution[5], color_code[5], dirpath[256], repeted_code[5];
     long int num_PLID, start_time, num_nt; 
-    int duration, difference, created, num_tries = 0, charcount = 0, nB = 0, nW = 0;
+    int duration, difference, created, num_tries = 0, nB = 0, nW = 0;
     size_t file_size;
     FILE *game_file;
     time_t raw_time;
     DIR* DIR_player_games;
 
-    for(size_t i = 0; arguments[i]; i++) {
-        if(arguments[i] == ' ') 
-            charcount++;
-    }
-    if (charcount != 5){ 
+    if (arguments_number(arguments) != 5){ 
         strcat(res_msg,"RTR ERR\n");
         return;    
     }
@@ -408,13 +399,7 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     FILE *game_file;
     size_t file_size;
 
-    int charcount = 0;
-
-    for(int i = 0; arguments[i]; i++) {
-        if(arguments[i] == ' ')
-            charcount++;
-    }
-    if (charcount != 0){
+    if (arguments_number(arguments) != 0){
         strcat(res_msg,"RQT ERR\n");
         return;
     }
@@ -485,13 +470,8 @@ char* debug(char* arguments){
     long int num_PLID, num_time;
     FILE *game_file;
     int created = 0;    
-    int charcount = 0;
 
-    for(int i = 0; arguments[i]; i++) {
-        if(arguments[i] == ' ')
-            charcount++;
-    }
-    if (charcount != 5)
+    if (arguments_number(arguments) != 5)
         return "RDB ERR\n";
 
     if (sscanf(arguments, "%6s %ld %c %c %c %c", PLID, &num_time, &solution[0], &solution[1], 
@@ -598,7 +578,7 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
 
     memset(&hints_udp,0,sizeof hints_udp);
-    hints_udp.ai_family= AF_UNSPEC;//IPv4
+    hints_udp.ai_family= AF_INET;//IPv4
     hints_udp.ai_socktype=SOCK_DGRAM;//UDP socket
     hints_udp.ai_flags = AI_PASSIVE;
 

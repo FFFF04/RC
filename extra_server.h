@@ -1,5 +1,5 @@
-#ifndef EXTRA_H_
-#define EXTRA_H_
+#ifndef EXTRA_SERVER_H_
+#define EXTRA_SERVER_H_
 
 #include <stddef.h>
 #include <stdio.h>
@@ -17,6 +17,7 @@ typedef struct {
     int mode[10];
 } SCORELIST;
 
+int arguments_number(char *arguments);
 DIR *SearchAndCreateGameDir(const char *parent_dir, int PLID);
 void removeFile(FILE* game_file, char* directory, int num_PLID);
 int CheckGameFileExists(const char *directory, int PLID, int protect);
@@ -35,11 +36,4 @@ int calculate_file_size(char *Fdata, char *last_line);
 int FindTopScores(SCORELIST *list);
 int CalculateScore(int rank, int duration, int max_duration);
 
-char* getIPaddress();
-void send_msg(int file, char const *str);
-void read_msg(char *prod_consumidor, int file, size_t size);
-int UDP(char* line, char* ip_address, char* port, char* msg);
-int TCP(char* line, char* ip_address, char* port, char* msg);
-
 #endif
-

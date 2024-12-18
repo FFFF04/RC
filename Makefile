@@ -7,12 +7,12 @@ CLIENT = player
 all: $(SERVER) $(CLIENT)
 
 $(SERVER):
-	$(CC) $(CFLAGS) extra.c Server.c -o $(SERVER)
+	$(CC) $(CFLAGS) extra_server.c Server.c -o $(SERVER)
 
 $(CLIENT):
-	$(CC) $(CFLAGS) extra.c Client.c -o $(CLIENT)
+	$(CC) $(CFLAGS) extra_player.c Client.c -o $(CLIENT)
 
 clean:
 	rm -f $(SERVER) $(CLIENT)
 	rm -rf GAMES SCORES
-	rm -rf *.txt
+	rm -rf *.html

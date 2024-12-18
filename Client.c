@@ -1,5 +1,5 @@
 #include "Client.h"
-#include "extra.h"
+#include "extra_player.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
@@ -14,8 +14,8 @@ char plId[6];
 int nT = 1;
 
 
+
 void reset_para(){
-    // memset(plId,0,sizeof(plId));
     nT = 1;
     return;
 }
@@ -92,12 +92,9 @@ void TRY(char* arguments){ //UDP protocol
         nB = strtol(strtok(NULL, " "), &endptr, 10);
         nW = strtol(strtok(NULL, ""), &endptr, 10);
 
-        if (new_nt == -1){ 
-            // Foi um resent pois o server nao conseguio enviar a 
-            // mensagem e tentamos outra vez enviar pelo terminal a mesma mensagem
+        if (new_nt == -1)
             nT--;
-        }
-        //Imprimimos sempre mesmo que ganhemos acho que fica bem :)
+
         fprintf(stdout, "Guess result: nB: %d, nW: %d, Num of Tries left: %d\n",nB,nW, 8 - nT);
         if(nB == 4){
             fprintf(stdout, "YOU WON. Guesses needed: %d. GOOD JOB!!!!\n",nT);
@@ -108,7 +105,7 @@ void TRY(char* arguments){ //UDP protocol
         fprintf(stdout, "Repeated guess. Try again!\n");
         nT--; 
     }
-    else if (strcmp(protocol,"INV") == 0){ // Acho que é so escrever mensagem.
+    else if (strcmp(protocol,"INV") == 0){
         fprintf(stdout, "Repeat the last 'TRY'!\n");
         nT--;
     }
@@ -127,7 +124,7 @@ void TRY(char* arguments){ //UDP protocol
         reset_para();
     }
     else if (strcmp(protocol,"ERR\n") == 0){
-        fprintf(stdout, "Incorrect Arguments in fuction 'try'\n"); //acho que dá para escrever este erro de maneira mais "normal"
+        fprintf(stdout, "Incorrect Arguments in fuction 'try'\n");
         nT--;
     }
     
@@ -342,8 +339,6 @@ int main(int argc, char *argv[]){
         ip_address = argv[2];
         port = argv[4];
     }
-
-    // FALTA ESTA PARTE
 
     memset(&act, 0, sizeof act);
     act.sa_handler = &handle_signal;
