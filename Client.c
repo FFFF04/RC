@@ -197,10 +197,8 @@ void scoreboard(){ //TCP session
         printf("Maybe try again later?\n");
         return;
     }
-
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
-
     if (strcmp(protocol,"EMPTY\n") == 0)
         fprintf(stdout, "No game have been finished\n");
     
@@ -210,7 +208,7 @@ void scoreboard(){ //TCP session
         fname = strtok(NULL, " ");
         fsize = strtok(NULL, " ");
         fdata = strtok(NULL, "");
-
+        
         FILE* fd = fopen(fname,"w");
 
         ssize_t ret = fwrite(fdata, sizeof(char), strtol(fsize, &endptr, 10), fd);

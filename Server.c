@@ -660,9 +660,6 @@ int main(int argc, char *argv[]){
                         
                         char *buffer = (char*) calloc(128, 1);
                         char PLID[7];
-                        // struct sockaddr_in client_addr;
-                        // socklen_t slen = sizeof(client_addr);
-                        // SenderSocket = accept(fd_tcp, (struct sockaddr *)&client_addr, &slen );
 
                         addrlen = sizeof(addr);
 
@@ -681,21 +678,25 @@ int main(int argc, char *argv[]){
                         command = strtok(buffer, " ");
                         arguments = strtok(NULL, "");
 
-                        sscanf(arguments,"%6s", PLID);
-
-                        if (verbose_mode == 1)
-                            printf("TCP -> PLID:%s, Request:%s, IP:%s, PORT:%d\n", PLID, 
-                                command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
                         
+
                         char *res_msg = (char*) calloc(2049,1);
-                        if (strcmp(command,"STR") == 0)
+                        if (strcmp(command,"STR") == 0){
                             show_trials(arguments, res_msg);
+                            if (verbose_mode == 1){
+                                sscanf(arguments,"%6s", PLID);
+                                printf("TCP -> PLID:%s, Request:%s, IP:%s, PORT:%d\n", PLID, 
+                                    command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
+                            }
+                        }
                         
+                        if (strcmp(command,"SSB\n") == 0){
+                            scoreboard(res_msg);           
+                            if (verbose_mode == 1)
+                                printf("TCP -> Request:%s, IP:%s, PORT:%d\n", 
+                                    command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
+                        }           
                         
-                        if (strcmp(command,"SSB\n") == 0)
-                            scoreboard(res_msg);                      
-                        
-
                         char *ptr = &res_msg[0];
                         int dimention = strlen(res_msg);
                         while(dimention > 0){
