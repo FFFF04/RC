@@ -15,8 +15,6 @@
 #include <time.h>
 #include <dirent.h>
 
-#define max(A,B) ((A)>=(B)?(A):(B))
-
 int verbose_mode = 0; // 0 desativado; 1 ativado
 FILE *fptr;
 char colors[6] = {'R', 'G', 'B', 'Y', 'O', 'P'};
@@ -614,19 +612,19 @@ int main(int argc, char *argv[]){
 
 
     //PARA TCP
-    fd_tcp=socket(AF_INET,SOCK_STREAM,0);//TCP socket
+    fd_tcp=socket(AF_INET,SOCK_STREAM,0);   //TCP socket
     if(fd_tcp==-1)
         exit(EXIT_FAILURE);
     memset(&hints_tcp,0,sizeof hints_tcp);
-    hints_tcp.ai_family=AF_INET;//IPv4
-    hints_tcp.ai_socktype=SOCK_STREAM;//TCP socket
+    hints_tcp.ai_family=AF_INET;    //IPv4
+    hints_tcp.ai_socktype=SOCK_STREAM;  //TCP socket
     hints_tcp.ai_flags = AI_PASSIVE;
     errcode=getaddrinfo(NULL, port, &hints_tcp, &res_tcp);
     if(errcode != 0)/*error*/
         exit(EXIT_FAILURE);
     int true = 1;
     setsockopt(fd_tcp,SOL_SOCKET,SO_REUSEADDR,&true,sizeof(int));
-    if(bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1)/*error*/{
+    if(bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1){  /*error*/
         perror("bind");
         exit(EXIT_FAILURE);
     }
@@ -638,6 +636,7 @@ int main(int argc, char *argv[]){
     FD_ZERO(&testfds); // Clear input mask
 
     while(1){
+
         FD_SET(fd_udp,&testfds); // Set UDP channel on
         FD_SET(fd_tcp,&testfds); // Set TCP channel on
 
@@ -660,6 +659,10 @@ int main(int argc, char *argv[]){
                     else if (p == 0){ // Child
                         
                         char *buffer = (char*) calloc(128, 1);
+                        char PLID[7];
+                        // struct sockaddr_in client_addr;
+                        // socklen_t slen = sizeof(client_addr);
+                        // SenderSocket = accept(fd_tcp, (struct sockaddr *)&client_addr, &slen );
 
                         addrlen = sizeof(addr);
 
@@ -678,13 +681,21 @@ int main(int argc, char *argv[]){
                         command = strtok(buffer, " ");
                         arguments = strtok(NULL, "");
 
+                        sscanf(arguments,"%6s", PLID);
+
+                        if (verbose_mode == 1)
+                            printf("TCP -> PLID:%s, Request:%s, IP:%s, PORT:%d\n", PLID, 
+                                command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
+                        
                         char *res_msg = (char*) calloc(2049,1);
                         if (strcmp(command,"STR") == 0)
                             show_trials(arguments, res_msg);
                         
+                        
                         if (strcmp(command,"SSB\n") == 0)
                             scoreboard(res_msg);                      
                         
+
                         char *ptr = &res_msg[0];
                         int dimention = strlen(res_msg);
                         while(dimention > 0){
@@ -707,6 +718,7 @@ int main(int argc, char *argv[]){
                 if(FD_ISSET(fd_udp,&testfds)){
                     
                     char *buffer = (char*) calloc(128, 1);
+                    char PLID[7];
 
                     addrlen=sizeof(addr);
                     if(recvfrom(fd_udp,buffer,128,0,(struct sockaddr*)&addr,&addrlen) == -1)/*error*/
@@ -714,7 +726,13 @@ int main(int argc, char *argv[]){
                     
                     command = strtok(buffer, " ");
                     arguments = strtok(NULL, "");
-            
+
+                    sscanf(arguments,"%6s", PLID);
+
+                    if (verbose_mode == 1)
+                        printf("UDP -> PLID:%s, Request:%s, IP:%s, PORT:%d\n", PLID, 
+                            command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), ntohs(addr.sin_port));
+
                     if (strcmp(command,"SNG") == 0){
                         char* res_msg = start(arguments);
                         if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/

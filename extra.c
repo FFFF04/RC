@@ -340,21 +340,6 @@ int FindLastGame(int PLID, char *fname) {
 int calculate_file_size(char *Fdata, char *last_line){
 
     int file_size;
-    // FILE *file;
-    
-    // file = fopen("File_size_aux", "w+");
-    // if (file == NULL) {
-    //     perror("fopen");
-    //     return -1;
-    // }
-
-    // fprintf(file,"%s%s",Fdata, last_line);
-
-    // fseek(file, 0, SEEK_END);
-    // file_size = ftell(file);
-
-    // fclose(file);
-    // remove("File_size_aux");
 
     char buffer[2049];
     memset(buffer,'\0',1);

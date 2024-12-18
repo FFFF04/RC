@@ -201,9 +201,9 @@ void scoreboard(){ //TCP session
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
 
-    if (strcmp(protocol,"EMPTY\n") == 0){
+    if (strcmp(protocol,"EMPTY\n") == 0)
         fprintf(stdout, "No game have been finished\n");
-    }
+    
     else{
         char *fname, *fsize, *fdata;
 
