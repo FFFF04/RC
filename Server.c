@@ -19,7 +19,6 @@
 
 int verbose_mode = 0; // 0 desativado; 1 ativado
 FILE *fptr;
-char colors[6] = {'R', 'G', 'B', 'Y', 'O', 'P'};
 long int clock_my = 0;
 DIR *DIR_games;
 struct dirent *dp_games;
@@ -76,7 +75,6 @@ void TRY(char* arguments, char *res_msg){
     char mode, solution[5], color_code[5], dirpath[256], repeted_code[5];
     long int num_PLID, start_time, num_nt; 
     int duration, difference, created, num_tries = 0, nB = 0, nW = 0;
-    size_t file_size;
     FILE *game_file;
     time_t raw_time;
     DIR* DIR_player_games;
@@ -93,20 +91,9 @@ void TRY(char* arguments, char *res_msg){
     }
     color_code[4] = '\0';
 
-    for (size_t i = 0; i != 4; i++) {
-        if (color_code[i] != ' ') {
-            int valid = 0;
-            for (size_t j = 0; j < 6; j++) {
-                if (color_code[i] == colors[j]) {
-                    valid = 1;
-                    break;
-                }
-            }
-            if (valid == 0){
-                strcat(res_msg,"RTR ERR\n");
-                return;
-            }
-        }
+    if (confirm_color_code(color_code) == 1){
+        strcat(res_msg,"RTR ERR\n");
+        return;
     }
     
     created = CheckGameFileExists("GAMES", num_PLID, 0);
@@ -121,18 +108,8 @@ void TRY(char* arguments, char *res_msg){
         return;
     }
 
-    fseek(game_file, 0, SEEK_END);
-    file_size = ftell(game_file);
-    rewind(game_file);
-
-    buffer = (char *)malloc(file_size + 1);
-    if (fread(buffer, 1, file_size, game_file) != file_size) {
-        perror("fread");
-        free(buffer);
-        strcat(res_msg,"RTR ERR\n");
-        return;
-    }
-    buffer[file_size] = '\0';
+    buffer = get_file_data(game_file);
+    
     first_line = strtok(buffer,"\n");
     rest_file = strtok(NULL,"");
     tries = (char *) calloc(256,1);
@@ -266,8 +243,7 @@ void show_trials(char *arguments, char *res_msg){
     
     char *endptr, *buffer, *first_line, *rest_file, *line;
     char filename[24], color_code[5], Fdata[2049], protocol_msg[9], last_line[64];
-    int num_PLID, created, nW, nB, duration, start_time, difference;
-    size_t file_size;
+    int num_PLID, created, nW, nB, duration, start_time, difference, last_time;
     FILE* game_file;
     time_t raw_time;
     memset(Fdata, 0, sizeof(Fdata));
@@ -300,18 +276,8 @@ void show_trials(char *arguments, char *res_msg){
     memset(filename, 0, sizeof(filename));
     sprintf(filename, "STATE_%d.txt",num_PLID);
 
-    fseek(game_file, 0, SEEK_END);
-    file_size = ftell(game_file);
-    rewind(game_file);
+    buffer = get_file_data(game_file);
 
-    buffer = (char *)malloc(file_size + 1);
-    if (fread(buffer, 1, file_size, game_file) != file_size) {
-        perror("fread");
-        free(buffer);
-        strcat(res_msg,"RST NOK\n");
-        return;
-    }
-    buffer[file_size] = '\0';
     first_line = strtok(buffer,"\n");
     rest_file = strtok(NULL,"");
     time(&raw_time);
@@ -331,18 +297,17 @@ void show_trials(char *arguments, char *res_msg){
         if(strcmp(protocol_msg, "RST FIN") == 0 && line != NULL && line[0] != 'T')
             strcat(Fdata, "-- No transactions found --\n");
         
-        if (strcmp(protocol_msg, "RST FIN") == 0)
-            sprintf(last_line,"-- Duration of Last Game: %d --\n", difference);
-        else
-            sprintf(last_line,"-- Time left: %d --\n", duration - difference);
-        
         while (line != NULL && line[0] == 'T'){
             char res_line[23];
-            sscanf(line, "%*2s %4s %d %d", color_code, &nB, &nW);
+            sscanf(line, "%*2s %4s %d %d %d", color_code, &nB, &nW, &last_time);
             sprintf(res_line, "T: %s, nB: %d, nW: %d\n", color_code, nB, nW);
             strcat(Fdata,res_line);
             line = strtok(NULL,"\n");
         }
+        if (strcmp(protocol_msg, "RST FIN") == 0)
+            sprintf(last_line,"-- Duration of Last Game: %d --\n", last_time);
+        else
+            sprintf(last_line,"-- Time left: %d --\n", duration - difference);
     }
 
     sprintf(res_msg, "%s %s %d %s%s",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata, last_line);
@@ -397,7 +362,6 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     char dirpath[256];
     DIR *DIR_player_games;
     FILE *game_file;
-    size_t file_size;
 
     if (arguments_number(arguments) != 0){
         strcat(res_msg,"RQT ERR\n");
@@ -416,18 +380,8 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
         return;
     }
     
-    fseek(game_file, 0, SEEK_END);
-    file_size = ftell(game_file);
-    rewind(game_file);
+    buffer = get_file_data(game_file);
 
-    buffer = (char *)malloc(file_size + 1);
-    if (fread(buffer, 1, file_size, game_file) != file_size) {
-        perror("fread");
-        free(buffer);
-        strcat(res_msg,"RQT ERR\n");
-        return;
-    }
-    buffer[file_size] = '\0';
     first_line = strtok(buffer,"\n");
     rest_file = strtok(NULL,"");
     time(&raw_time);
@@ -484,19 +438,8 @@ char* debug(char* arguments){
 
     num_PLID = strtol(PLID, &endptr, 10);
 
-    for (size_t i = 0; i != 4; i++) {
-        if (solution[i] != ' ') {
-            int valid = 0;
-            for (size_t j = 0; j < 6; j++) {
-                if (solution[i] == colors[j]) {
-                    valid = 1;
-                    break;
-                }
-            }
-            if (valid == 0)
-                return "RDB ERR\n";
-        }
-    }
+    if (confirm_color_code(solution) == 1)
+        return "RDB ERR\n";
 
     created = CheckGameFileExists("GAMES", num_PLID,1);
     if (created == 1)

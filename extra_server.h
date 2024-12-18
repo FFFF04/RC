@@ -17,7 +17,12 @@ typedef struct {
     int mode[10];
 } SCORELIST;
 
+static const char colors[6] = {'R', 'G', 'B', 'Y', 'O', 'P'};
+
 int arguments_number(char *arguments);
+char* get_file_data(FILE* game_file);
+int confirm_color_code(char *solution);
+
 DIR *SearchAndCreateGameDir(const char *parent_dir, int PLID);
 void removeFile(FILE* game_file, char* directory, int num_PLID);
 int CheckGameFileExists(const char *directory, int PLID, int protect);

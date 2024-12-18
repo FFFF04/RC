@@ -25,6 +25,42 @@ int arguments_number(char *arguments){
 }
 
 
+char* get_file_data(FILE* game_file){
+
+    long int file_size;
+
+    fseek(game_file, 0, SEEK_END);
+    file_size = ftell(game_file);
+    rewind(game_file);
+
+    char *buffer = (char *)malloc(file_size + 1);
+    fread(buffer, 1, file_size, game_file);
+
+    buffer[file_size] = '\0';
+
+    return buffer;
+}
+
+
+
+int confirm_color_code(char *color_code){
+    for (size_t i = 0; i != 4; i++) {
+        if (color_code[i] != ' ') {
+            int valid = 0;
+            for (size_t j = 0; j < 6; j++) {
+                if (color_code[i] == colors[j]) {
+                    valid = 1;
+                    break;
+                }
+            }
+            if (valid == 0)
+                return 1;
+        }
+    }
+    return 0;
+}
+
+
 DIR *SearchAndCreateGameDir(const char *parent_dir, int PLID) {
     char target_path[256];
     struct stat sb_games;
