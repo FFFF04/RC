@@ -685,16 +685,16 @@ int main(int argc, char *argv[]){
                             show_trials(arguments, res_msg);
                             if (verbose_mode == 1){
                                 sscanf(arguments,"%6s", PLID);
-                                printf("TCP -> PLID:%s, Request:%s, IP:%s, PORT:%d\n", PLID, 
-                                    command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
+                                printf("TCP -> PLID:STR, Request:%s, IP:%s, PORT:%d\n", PLID, 
+                                     (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
                             }
                         }
                         
                         if (strcmp(command,"SSB\n") == 0){
                             scoreboard(res_msg);           
                             if (verbose_mode == 1)
-                                printf("TCP -> Request:%s, IP:%s, PORT:%d\n", 
-                                    command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
+                                printf("TCP -> Request:SSB, IP:%s, PORT:%d\n", 
+                                    (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
                         }           
                         
                         char *ptr = &res_msg[0];
