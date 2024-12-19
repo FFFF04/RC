@@ -74,6 +74,11 @@ void TRY(char* arguments){ //UDP protocol
     char msg[22];
     char *protocol;
     
+    if (strcmp(plId,"") == 0){
+        fprintf(stdout, "There is no ongoing game.\n");
+        return ;
+    }
+
     snprintf(msg, sizeof(msg), "TRY %s %s %d\n", plId, strtok(arguments,"\n"), nT);
     
     if (UDP(msg,ip_address,port,res_msg) == 1){
@@ -139,6 +144,11 @@ void show_trials(){ //TCP session
     char* res_msg = (char*) calloc(2049,1);
     char msg[12];
     char *protocol, *endptr;
+
+    if (strcmp(plId,"") == 0){
+        fprintf(stdout, "There is no ongoing/finished game.\n");
+        return ;
+    }
     
     snprintf(msg, sizeof(msg), "STR %s\n", plId);
 

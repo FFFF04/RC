@@ -136,7 +136,7 @@ void TRY(char* arguments, char *res_msg){
         free(buffer);
         free(tries);
         closedir(DIR_player_games);
-        sprintf(res_msg, "RTR ETM %s\n", solution);
+        sprintf(res_msg, "RTR ETM %c %c %c %c\n", solution[0], solution[1], solution[2], solution[3]);
         removeFile(game_file,"GAMES/GAME_",num_PLID);
         return;
     }
@@ -155,7 +155,7 @@ void TRY(char* arguments, char *res_msg){
         free(buffer);
         free(tries);
         closedir(DIR_player_games);
-        sprintf(res_msg, "RTR ENT %s\n", solution);
+        sprintf(res_msg, "RTR ENT %c %c %c %c\n", solution[0], solution[1], solution[2], solution[3]);
         removeFile(game_file,"GAMES/GAME_",num_PLID);
         return;
     }
@@ -405,7 +405,7 @@ void quit(char* arguments, char *res_msg){ //UDP protocol
     }
     
     res_function_msg = (char*) calloc(20,1);
-    CreateTimestampedFile_QUIT(dirpath,first_line, rest_file, res_function_msg);
+    CreateTimestampedFile_QUIT(dirpath, first_line, rest_file, res_function_msg);
     if(game_end == 0)
         sprintf(res_msg, "RQT %s\n", res_function_msg);
 
