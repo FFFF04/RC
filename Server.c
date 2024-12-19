@@ -605,7 +605,7 @@ int main(int argc, char *argv[]){
                             show_trials(arguments, res_msg);
                             if (verbose_mode == 1){
                                 sscanf(arguments,"%6s", PLID);
-                                printf("TCP -> PLID:%d, Request:%s, IP:%s, PORT:%s\n", PLID, 
+                                printf("TCP -> PLID:%s, Request:STR, IP:%s, PORT:%s\n", PLID, 
                                      (char*)inet_ntoa((struct in_addr)addr.sin_addr), port);
                             }
                         }
