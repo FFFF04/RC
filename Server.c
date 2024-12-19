@@ -116,10 +116,8 @@ void TRY(char* arguments, char *res_msg){
     if (rest_file != NULL)
         memcpy(tries, rest_file, 256);
     
-
     time(&raw_time);
     sscanf(first_line, "%*6s %1c %4s %d %*10s %*8s %ld", &mode, solution, &duration, &start_time);
-
 
     difference = raw_time - start_time;
     if(duration <= difference){ // JÁ PASSOU DO TEMPO DE JOGO
@@ -461,7 +459,7 @@ int main(int argc, char *argv[]){
     char *port, *command, *arguments;
     struct sockaddr_in addr;
     socklen_t addrlen;
-    struct addrinfo hints_udp, hints_tcp,*res_tcp, *res_udp;
+    struct addrinfo hints_udp, hints_tcp, *res_tcp, *res_udp;
     struct sigaction act;
     int fd_tcp, fd_udp, errcode, select_fds;
     
@@ -542,6 +540,7 @@ int main(int argc, char *argv[]){
     hints_tcp.ai_family=AF_INET;    //IPv4
     hints_tcp.ai_socktype=SOCK_STREAM;  //TCP socket
     hints_tcp.ai_flags = AI_PASSIVE;
+
     errcode=getaddrinfo(NULL, port, &hints_tcp, &res_tcp);
     if(errcode != 0)/*error*/
         exit(EXIT_FAILURE);
@@ -563,7 +562,7 @@ int main(int argc, char *argv[]){
         FD_SET(fd_udp,&testfds); // Set UDP channel on
         FD_SET(fd_tcp,&testfds); // Set TCP channel on
 
-        select_fds = select(FD_SETSIZE,&testfds,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) NULL);
+        select_fds = select(FD_SETSIZE, &testfds, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *) NULL);
 
         switch(select_fds){
             case -1:
@@ -601,23 +600,21 @@ int main(int argc, char *argv[]){
                         command = strtok(buffer, " ");
                         arguments = strtok(NULL, "");
 
-                        
-
                         char *res_msg = (char*) calloc(2049,1);
                         if (strcmp(command,"STR") == 0){
                             show_trials(arguments, res_msg);
                             if (verbose_mode == 1){
                                 sscanf(arguments,"%6s", PLID);
-                                printf("TCP -> PLID:STR, Request:%s, IP:%s, PORT:%d\n", PLID, 
-                                     (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
+                                printf("TCP -> PLID:%d, Request:%s, IP:%s, PORT:%s\n", PLID, 
+                                     (char*)inet_ntoa((struct in_addr)addr.sin_addr), port);
                             }
                         }
                         
                         if (strcmp(command,"SSB\n") == 0){
                             scoreboard(res_msg);           
                             if (verbose_mode == 1)
-                                printf("TCP -> Request:SSB, IP:%s, PORT:%d\n", 
-                                    (char*)inet_ntoa((struct in_addr)addr.sin_addr), addr.sin_port);
+                                printf("TCP -> Request:SSB, IP:%s, PORT:%s\n", 
+                                    (char*)inet_ntoa((struct in_addr)addr.sin_addr), port);
                         }           
                         
                         char *ptr = &res_msg[0];
@@ -654,8 +651,8 @@ int main(int argc, char *argv[]){
                     sscanf(arguments,"%6s", PLID);
 
                     if (verbose_mode == 1)
-                        printf("UDP -> PLID:%s, Request:%s, IP:%s, PORT:%d\n", PLID, 
-                            command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), ntohs(addr.sin_port));
+                        printf("UDP -> PLID:%s, Request:%s, IP:%s, PORT:%s\n", PLID, 
+                            command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), port);
 
                     if (strcmp(command,"SNG") == 0){
                         char* res_msg = start(arguments);
@@ -688,6 +685,8 @@ int main(int argc, char *argv[]){
     
     close(fd_udp);
     close(fd_tcp);
+    closedir(DIR_games);
+    closedir(DIR_scores);
 
     exit(EXIT_SUCCESS);
 }
