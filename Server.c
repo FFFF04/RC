@@ -260,7 +260,7 @@ void show_trials(char *arguments, char *res_msg){
             return;
         }
         strcat(protocol_msg, "RST FIN");
-        strcat(Fdata,"Plays of last Game:\n");
+        strcat(Fdata,"\nPlays of last Game:\n");
     }
     else{// Created
         game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
@@ -269,7 +269,7 @@ void show_trials(char *arguments, char *res_msg){
             return;
         }
         strcat(protocol_msg, "RST ACT");
-        strcat(Fdata,"Previous plays:\n");
+        strcat(Fdata,"\nPrevious plays:\n");
     }
     memset(filename, 0, sizeof(filename));
     sprintf(filename, "STATE_%d.txt",num_PLID);
