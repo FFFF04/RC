@@ -140,7 +140,7 @@ void TRY(char* arguments, char *res_msg){
     }
 
 
-    if(num_nt == 8 && strcmp(solution,color_code) != 0){ // JÁ NÃO HA MAIS JOGADAS
+    if(num_nt == 9 && strcmp(solution,color_code) != 0){ // JÁ NÃO HA MAIS JOGADAS
 
         DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
         if (DIR_player_games == NULL){
@@ -302,8 +302,10 @@ void show_trials(char *arguments, char *res_msg){
             strcat(Fdata,res_line);
             line = strtok(NULL,"\n");
         }
-        if (strcmp(protocol_msg, "RST FIN") == 0)
+        if (strcmp(protocol_msg, "RST FIN") == 0){
+
             sprintf(last_line,"-- Duration of Last Game: %d --\n", last_time);
+        }
         else
             sprintf(last_line,"-- Time left: %d --\n", duration - difference);
     }
