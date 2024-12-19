@@ -261,7 +261,7 @@ void show_trials(char *arguments, char *res_msg){
             return;
         }
         strcat(protocol_msg, "RST FIN");
-        strcat(Fdata,"\nPlays of last Game:\n");
+        strcat(Fdata,"Plays of last Game:\n");
     }
     else{// Created
         game_file = CreateAndOpenGameFile("GAMES/GAME_", num_PLID, "r+");
@@ -270,7 +270,7 @@ void show_trials(char *arguments, char *res_msg){
             return;
         }
         strcat(protocol_msg, "RST ACT");
-        strcat(Fdata,"\nPrevious plays:\n");
+        strcat(Fdata,"Previous plays:\n");
     }
     memset(filename, 0, sizeof(filename));
     sprintf(filename, "STATE_%d.txt",num_PLID);
@@ -304,14 +304,14 @@ void show_trials(char *arguments, char *res_msg){
             line = strtok(NULL,"\n");
         }
         if (strcmp(protocol_msg, "RST FIN") == 0){
-
+            // FALTA AQUI SE LAST_TIME FOR NULO
             sprintf(last_line,"-- Duration of Last Game: %d --\n", last_time);
         }
         else
             sprintf(last_line,"-- Time left: %d --\n", duration - difference);
     }
 
-    sprintf(res_msg, "%s %s %d %s%s",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata, last_line);
+    sprintf(res_msg, "%s %s %d %s%s\n",protocol_msg, filename, calculate_file_size(Fdata,last_line), Fdata, last_line);
     free(buffer);
 }
 
