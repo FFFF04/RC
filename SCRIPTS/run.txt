@@ -1,9 +1,6 @@
 ./player -n tejo.tecnico.ulisboa.pt -p 58011
 start 106067 500
-quit
-
 try Y Y Y Y
-try G G G G
 try G G G G
 try G Y G G
 try G G G Y

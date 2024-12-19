@@ -29,7 +29,9 @@ struct dirent *dp_scores;
 
 char* start(char* arguments){
 
-    srand((unsigned int) time(NULL));
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts); // Get precise time
+    srand((unsigned int)(ts.tv_nsec ^ ts.tv_sec)); 
 
     char trash[5], PLID[7], solution[4];
     char *endptr;
@@ -139,8 +141,7 @@ void TRY(char* arguments, char *res_msg){
         return;
     }
 
-
-    if(num_nt == 9 && strcmp(solution,color_code) != 0){ // JÁ NÃO HA MAIS JOGADAS
+    if(num_nt == 8 && strcmp(solution,color_code) != 0){ // JÁ NÃO HA MAIS JOGADAS
 
         DIR_player_games = SearchAndCreateGameDir("GAMES/", num_PLID);
         if (DIR_player_games == NULL){
