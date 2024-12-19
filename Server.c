@@ -304,7 +304,7 @@ void show_trials(char *arguments, char *res_msg){
             line = strtok(NULL,"\n");
         }
         if (strcmp(protocol_msg, "RST FIN") == 0){
-            // FALTA AQUI SE LAST_TIME FOR NULO
+            sscanf(line, "%*[^ ] %*[^ ] %d", &last_time);
             sprintf(last_line,"-- Duration of Last Game: %d --\n", last_time);
         }
         else
