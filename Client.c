@@ -10,13 +10,18 @@
 
 
 char *port, *ip_address;
-char plId[6];
+char plId[6], lastgame_id[6];
 int nT = 1;
 
 
 
 void reset_para(){
     nT = 1;
+    if (strcmp(plId,"") != 0){
+        memset(lastgame_id,0,sizeof(lastgame_id));
+        memcpy(lastgame_id,plId, sizeof(lastgame_id));
+    }
+    memset(plId,0,sizeof(plId));
     return;
 }
 
@@ -37,8 +42,11 @@ void start(char* arguments){ //UDP protocol
     char *protocol;
     char msg[17];
     
-    memset(plId,0,sizeof(plId));
-
+    if (strcmp(plId,"") != 0){
+        fprintf(stdout, "There is an ongoing game.\n");
+        return ;
+    }
+    
     snprintf(msg, sizeof(msg), "SNG %s", arguments);
     
     if (UDP(msg,ip_address,port,res_msg) == 1){
@@ -54,8 +62,10 @@ void start(char* arguments){ //UDP protocol
         free(res_msg);
         return;
     }
-    else if (strcmp(protocol,"NOK\n") == 0)
+    else if (strcmp(protocol,"NOK\n") == 0){
         fprintf(stdout, "Game already Created\n");
+        return;    
+    }
     else
         fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
 
@@ -63,6 +73,7 @@ void start(char* arguments){ //UDP protocol
             plId[i] = arguments[i];
     }
     free(res_msg);
+    memset(lastgame_id,0,sizeof(lastgame_id));
 }
 
 
@@ -145,12 +156,11 @@ void show_trials(){ //TCP session
     char msg[12];
     char *protocol, *endptr;
 
-    if (strcmp(plId,"") == 0){
-        fprintf(stdout, "There is no ongoing/finished game.\n");
-        return ;
-    }
+    if (strcmp(plId,"") == 0 && strcmp(lastgame_id,"") != 0)
+        snprintf(msg, sizeof(msg), "STR %s\n", lastgame_id);
     
-    snprintf(msg, sizeof(msg), "STR %s\n", plId);
+    else
+        snprintf(msg, sizeof(msg), "STR %s\n", plId);
 
     if(TCP(msg, ip_address, port, res_msg) == 1){
         printf("Maybe try again later?\n");
@@ -265,6 +275,7 @@ int quit(){ //UDP protocol
     else if (strcmp(protocol, "NOK\n") == 0)
         fprintf(stdout, "There is no ongoing game.\n");
 
+    reset_para();
     free(res_msg);
     return 0;    
 }
@@ -291,7 +302,10 @@ void debug(char *arguments){ //UDP protocol
     char *protocol;
     char msg[24];
 
-    memset(plId,0,sizeof(plId));
+    if (strcmp(plId,"") != 0){
+        fprintf(stdout, "There is an ongoing game.\n");
+        return ;
+    }
 
     snprintf(msg, sizeof(msg), "DBG %s", arguments);
     
@@ -308,16 +322,20 @@ void debug(char *arguments){ //UDP protocol
         free(res_msg);
         return;
     }
-    else if (strcmp(protocol,"NOK\n") == 0)
+    else if (strcmp(protocol,"NOK\n") == 0){
         fprintf(stdout, "Game already Created\n");
+        return;
+    }
     else
         fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
     
+    memset(plId,0,sizeof(plId));
 
     for(int i = 0; i < 6; i++){
             plId[i] = arguments[i];
     }
     free(res_msg);
+    memset(lastgame_id,0,sizeof(lastgame_id));
 }
 
 

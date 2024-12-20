@@ -12,6 +12,8 @@
 #include <stddef.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <time.h>
 
 char* getIPaddress()
 {
@@ -123,6 +125,7 @@ int UDP(char* line, char* ip_address, char* port, char* msg) {
 }
 
 
+
 int TCP(char* line, char* ip_address, char* port, char* msg) {
     struct addrinfo hints, *res;
     int fd, n;
@@ -177,15 +180,39 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
 
     nleft = 2049; // Max buffer size for receiving
 
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) {
+        perror("fcntl F_GETFL failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        perror("fcntl F_SETFL failed");
+        exit(EXIT_FAILURE);
+    }
+
+    time_t start_time = time(NULL);
+
     while (nleft > 0) {
         nread = read(fd, msg, nleft);
         if (nread == 0)
             break;
-        if (nread < 0) {
-            perror("read failed");
-            freeaddrinfo(res);
-            close(fd);
-            return 1;
+        else {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                if (time(NULL) - start_time > 20) {
+                    printf("TCP not working. Timeout reached. Server is probably down\n");
+                    freeaddrinfo(res);
+                    close(fd);
+                    return 1; 
+                }
+                continue;
+            } 
+            else {
+                perror("read failed");
+                freeaddrinfo(res);
+                close(fd);
+                exit(EXIT_FAILURE);
+            }
         }
         nleft -= nread;
         msg += nread;

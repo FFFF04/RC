@@ -292,6 +292,7 @@ void show_trials(char *arguments, char *res_msg){
     }
         
     else{
+        int enter = 0;
         line = strtok(rest_file,"\n");
         if(strcmp(protocol_msg, "RST FIN") == 0 && line != NULL && line[0] != 'T')
             strcat(Fdata, "-- No transactions found --\n");
@@ -302,9 +303,12 @@ void show_trials(char *arguments, char *res_msg){
             sprintf(res_line, "T: %s, nB: %d, nW: %d\n", color_code, nB, nW);
             strcat(Fdata,res_line);
             line = strtok(NULL,"\n");
+            enter = 1;
         }
         if (strcmp(protocol_msg, "RST FIN") == 0){
-            sscanf(line, "%*[^ ] %*[^ ] %d", &last_time);
+            if(enter == 0)
+                sscanf(line, "%*[^ ] %*[^ ] %d", &last_time);
+
             sprintf(last_line,"-- Duration of Last Game: %d --\n", last_time);
         }
         else
@@ -608,16 +612,16 @@ int main(int argc, char *argv[]){
                             show_trials(arguments, res_msg);
                             if (verbose_mode == 1){
                                 sscanf(arguments,"%6s", PLID);
-                                printf("TCP -> PLID:%s, Request:STR, IP:%s, PORT:%s\n", PLID, 
-                                     (char*)inet_ntoa((struct in_addr)addr.sin_addr), port);
+                                printf("TCP -> PLID:%s, Request:STR, IP:%s, PORT:%d\n", PLID, 
+                                     (char*)inet_ntoa((struct in_addr)addr.sin_addr), ntohs(addr.sin_port));
                             }
                         }
                         
                         if (strcmp(command,"SSB\n") == 0){
                             scoreboard(res_msg);           
                             if (verbose_mode == 1)
-                                printf("TCP -> Request:SSB, IP:%s, PORT:%s\n", 
-                                    (char*)inet_ntoa((struct in_addr)addr.sin_addr), port);
+                                printf("TCP -> Request:SSB, IP:%s, PORT:%d\n", 
+                                    (char*)inet_ntoa((struct in_addr)addr.sin_addr), ntohs(addr.sin_port));
                         }           
                         
                         char *ptr = &res_msg[0];
@@ -654,9 +658,9 @@ int main(int argc, char *argv[]){
                     sscanf(arguments,"%6s", PLID);
 
                     if (verbose_mode == 1)
-                        printf("UDP -> PLID:%s, Request:%s, IP:%s, PORT:%s\n", PLID, 
-                            command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), port);
-
+                        printf("UDP -> PLID:%s, Request:%s, IP:%s, PORT:%d\n", PLID, 
+                            command, (char*)inet_ntoa((struct in_addr)addr.sin_addr), ntohs(addr.sin_port));
+                    
                     if (strcmp(command,"SNG") == 0){
                         char* res_msg = start(arguments);
                         if(sendto(fd_udp, res_msg, strlen(res_msg), 0, (struct sockaddr*)&addr, addrlen) == -1)/*error*/
