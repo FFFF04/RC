@@ -604,6 +604,20 @@ int main(int argc, char *argv[]){
                             exit(EXIT_FAILURE);
                         }
 
+                        size_t n_left = 32;
+
+                        while (strchr(buffer, '\n') == NULL) {
+                            n_read = read(newfd, buffer, n_left);
+                            if (n_read == 0)
+                                break;
+                            if (n_read < 0) {
+                                perror("Read failed");
+                                exit(EXIT_FAILURE);
+                            }
+                            n_left -= n_read;
+                            buffer += n_read;
+                        }
+
                         command = strtok(buffer, " ");
                         arguments = strtok(NULL, "");
 
