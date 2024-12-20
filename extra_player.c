@@ -136,14 +136,14 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
     act.sa_handler = SIG_IGN;
     if (sigaction(SIGPIPE, &act, NULL) == -1) {
         perror("sigaction failed");
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     // Create a TCP socket
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
         perror("socket creation failed");
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     memset(&hints, 0, sizeof hints);
@@ -154,7 +154,7 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
     if (n != 0) {
         fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(n));
         close(fd);
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     n = connect(fd, res->ai_addr, res->ai_addrlen);
@@ -162,7 +162,7 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
         perror("connect failed");
         freeaddrinfo(res);
         close(fd);
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     nbytes = strlen(line);
@@ -180,39 +180,15 @@ int TCP(char* line, char* ip_address, char* port, char* msg) {
 
     nleft = 2049; // Max buffer size for receiving
 
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags == -1) {
-        perror("fcntl F_GETFL failed");
-        exit(EXIT_FAILURE);
-    }
-
-    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-        perror("fcntl F_SETFL failed");
-        exit(EXIT_FAILURE);
-    }
-
-    time_t start_time = time(NULL);
-
     while (nleft > 0) {
         nread = read(fd, msg, nleft);
         if (nread == 0)
             break;
-        else {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                if (time(NULL) - start_time > 20) {
-                    printf("TCP not working. Timeout reached. Server is probably down\n");
-                    freeaddrinfo(res);
-                    close(fd);
-                    return 1; 
-                }
-                continue;
-            } 
-            else {
-                perror("read failed");
-                freeaddrinfo(res);
-                close(fd);
-                exit(EXIT_FAILURE);
-            }
+        if (nread < 0) {
+            perror("read failed");
+            freeaddrinfo(res);
+            close(fd);
+            return 1;
         }
         nleft -= nread;
         msg += nread;

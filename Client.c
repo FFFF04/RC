@@ -62,10 +62,8 @@ void start(char* arguments){ //UDP protocol
         free(res_msg);
         return;
     }
-    else if (strcmp(protocol,"NOK\n") == 0){
-        fprintf(stdout, "Game already Created\n");
-        return;    
-    }
+    else if (strcmp(protocol,"NOK\n") == 0)
+        fprintf(stdout, "Game already Created\n");   
     else
         fprintf(stdout, "Game successfully Created. GOOD LUCK!\n");
 
@@ -163,8 +161,8 @@ void show_trials(){ //TCP session
         snprintf(msg, sizeof(msg), "STR %s\n", plId);
 
     if(TCP(msg, ip_address, port, res_msg) == 1){
-        printf("Maybe try again later?\n");
-        return;
+        printf("Maybe try again later?\nDisconnecting player.");
+        exit(EXIT_FAILURE);
     }
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
@@ -211,8 +209,8 @@ void scoreboard(){ //TCP session
     snprintf(msg, sizeof(msg), "SSB\n");
 
     if(TCP(msg, ip_address, port, res_msg) == 1){
-        printf("Maybe try again later?\n");
-        return;
+        printf("Maybe try again later?\nDisconnecting player.");
+        exit(EXIT_FAILURE);
     }
     strtok(res_msg," ");
     protocol = strtok(NULL, " ");
