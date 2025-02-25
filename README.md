@@ -1,5 +1,7 @@
 # RC
 
+Trabalho com ligações TCP e UDP sobre jogo do MasterMind
+
 Comandos da MakeFile:
 
 make - para compliar
